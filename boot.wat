@@ -184,7 +184,7 @@
       (let ((((test . body) . clauses) clauses))
         (if (eval test env)
             (apply (wrap begin) body env)
-            (apply (wrap cond) clauses env)))))
+            (apply (wrap cond) clauses env) ))))
 
 (define else #t)
 
@@ -233,13 +233,14 @@
 
 ;; Evaluate right hand sides before binding all dynamic variables at once.
 (define-operative (dlet bindings . body) env
-  (eval (let process-bindings ((bs bindings))
-          (if (nil? bs)
-              (list* begin body)
-              (let* ((((name expr) . rest-bs) bs)
-                     (value (eval expr env)))
-                (list vm-dlet name value (process-bindings rest-bs)))))
-        env))
+  (eval
+    (let process-bindings ((bs bindings))
+       (if (nil? bs)
+           (list* begin body)
+           (let* ( (((name expr) . rest-bs) bs)
+                   (value (eval expr env)) )
+             (list vm-dlet name value (process-bindings rest-bs)) )))
+    env ))
 
 ;;;; Prototypes
 
@@ -251,7 +252,7 @@
         (super (eval super-name env)))
     (set (.prototype p) (@create $Object (.prototype super)))
     (set (.constructor (.prototype p)) super)
-    p))
+    p ))
 
 (define-macro (define-generic (name . #ignore))
   (list _define name (lambda args (apply ((js-getter name) (car args)) args))))
@@ -265,11 +266,12 @@
 ;;;; Modules
 
 (define-operative (provide symbols . body) env
-  (eval (list _define symbols
-              (list let ()
-                    (list* begin body)
-                    (list* list symbols)))
-        env))
+  (eval
+    (list _define symbols
+      (list let ()
+        (list* begin body)
+        (list* list symbols) ))
+    env ))
 
 (define-operative (module exports . body) env
   (let ((menv (make-environment env)))
@@ -306,22 +308,24 @@
 (define (!= . args) (not (apply == args)))
 (define (!== . args) (not (apply === args)))
 
-(define * (let ((vm* (vm-js-binop "*")))
-            (lambda args
-              (fold-list vm* 1 args))))
+(define *
+  (let ((vm* (vm-js-binop "*")))
+    (lambda args
+      (fold-list vm* 1 args) )))
 
 ;; Can't simply use 0 as unit or it won't work with strings
-(define + (let ((vm+ (vm-js-binop "+")))
-            (lambda args
-              (if (nil? args)
-                  0
-                  (fold-list vm+ (car args) (cdr args))))))
+(define +
+  (let ((vm+ (vm-js-binop "+")))
+	(lambda args
+	  (if (nil? args)
+	      0
+	      (fold-list vm+ (car args) (cdr args)) ))))
 
 (define (negative-op binop unit)
   (lambda (arg1 . rest)
     (if (nil? rest)
         (binop unit arg1)
-        (fold-list binop arg1 rest))))
+        (fold-list binop arg1 rest) )))
 
 (define - (negative-op (vm-js-binop "-") 0))
 (define / (negative-op (vm-js-binop "/") 1))
@@ -350,13 +354,14 @@
 (define (elt object key)
   ((js-getter key) object))
 
-(set (setter elt) (lambda (new-val object key)
-                    (set ((js-getter key) object) new-val)))
+(set (setter elt)
+  (lambda (new-val object key)
+    (set ((js-getter key) object) new-val) ))
 
 (define (array . args) (list->array args))
 
 (define (js-callback fun)
-  (vm-js-function (_lambda args (push-prompt vm-root-prompt (apply fun args)))))
+  (vm-js-function (_lambda args (push-prompt vm-root-prompt (apply fun args)))) )
 
 (define-macro (js-lambda params . body)
   (list js-callback (list* lambda params body)))
@@ -365,7 +370,7 @@
   (list vm-type? obj type (symbol-name type)))
 
 (define-macro (the type obj)
-  (list if (list type? obj type) obj (list error (list + obj " is not a: " type))))
+  (list if (list type? obj type) obj (list error (list + obj " is not a: " type))) )
 
 (define Array $Array)
 (define Boolean $Boolean)
@@ -388,50 +393,50 @@
 (set (setter ref) (lambda (new-val (c Cell)) (set (.value c) new-val)))
 
 (define-macro (++ place)
-  (list set place (list + place 1)))
+  (list set place (list + place 1)) )
 (define-macro (-- place)
-  (list set place (list - place 1)))
+  (list set place (list - place 1)) )
 
 ;;;; Utilities
 
 ;; ugh
 (define (map-array fun (arr Array))
-  (list->array (map-list fun (array->list arr))))
+  (list->array (map-list fun (array->list arr))) )
 
 (define (array-keep pred (arr Array))
-  (list->array (list-keep pred (array->list arr))))
+  (list->array (list-keep pred (array->list arr))) )
 
 (define-operative (time expr) env
   (let ((n (@getTime (new Date)))
         (result (eval expr env)))
     (log (+ "time " expr ": " (- (@getTime (new Date)) n) "ms"))
-    result))
+    result ))
 
 (define-operative (assert expr) env
   (unless (=== #t (eval expr env))
-    (error (+ "Should be true: " expr))))
+    (error (+ "Should be true: " expr)) ))
 
 (define-operative (assert-false expr) env
   (unless (=== #f (eval expr env))
-     (error (+ "Should be false: " expr))))
+     (error (+ "Should be false: " expr)) ))
 
 (define-operative (assert-=== expected expr2) env
   (let ((res (eval expr2 env))
         (exp (eval expected env)))
     (unless (=== exp res)
-      (error (+ expr2 " should be " exp " but is " res)))))
+      (error (+ expr2 " should be " exp " but is " res) ))))
 
 (define-operative (assert-== expected expr2) env
   (let ((res (eval expr2 env))
         (exp (eval expected env)))
     (unless (== exp res)
-      (error (+ expr2 " should be " exp " but is " res)))))
+      (error (+ expr2 " should be " exp " but is " res) ))))
 
 (define-operative (assert-throws expr) env
   (label return
     (catch (eval expr env)
       (lambda (exc) (return)))
-    (error (+ "Should throw: " expr))))
+    (error (+ "Should throw: " expr)) ))
 
 ;;;; Options
 
@@ -444,22 +449,24 @@
   (let ((option (the Option (eval option-expr env))))
     (if (type? option Some)
         (eval (list (list lambda (list option-name) then) (.value option)) env)
-        (eval else env))))
+        (eval else env) )))
 
 ;;;; Error break routine, called by VM to print stacktrace and throw
 
-(define (print-stacktrace)
+(define (print-stacktrace err)
   (define (print-frame k)
-    (log (@toString (.dbg k)) (.e k))
-    (if (.next k)
-        (print-frame (.next k))
-        #undefined))
+    (log (@toString (.fun k)) (.dbg k) (.e k)) ;; @toString di .dbg == undefined no buono
+    (when (vm-type? (.next k) $StackFrame) ;; .next di !StackFrame no buono!
+    	(print-frame (.next k)) ))
   (take-subcont vm-root-prompt k
-    (print-frame k)
+  	(log err)
+  	(log k)
+    ;(print-frame k)
     (push-prompt vm-root-prompt
-      (push-subcont k))))
+      (push-subcont k) )))
 
 (define (user-break err)
-  (print-stacktrace)
-  (throw err))
+  ;(print-stacktrace err)
+  (throw err) )
+
 

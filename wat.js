@@ -6,6 +6,6 @@ vm.exec(boot_bytecode);
 
 module.exports.vm = function() {
     return {
-        "eval": function(sexp) { return vm.exec(parser.parse_sexp(sexp)); }
+        eval: function(sexp) { return vm.exec(parser.parse_sexp(sexp)); }
     };
 };
