@@ -29,7 +29,12 @@ module.exports = function Qua() {
 	}
 	
 	/* Evaluation Core */
-	function evaluate(m, e, x) { return x && x.wat_eval ? x.wat_eval(m, e) : x; }
+	function evaluate(m, e, x) {
+		 if (x && x.wat_eval)
+		 	return x.wat_eval(m, e)
+		 else
+		 	return x;
+	}
 	function Sym(name) { this.name = name; }
 	function sym(name) { return new Sym(name); }
 	Sym.prototype.wat_eval = function(m, e) {
@@ -94,16 +99,24 @@ module.exports = function Qua() {
 	/* Built-in Combiners */
 	function Vau() { }; function Def() { }; function Eval() { };
 	Vau.prototype.wat_combine = function(m, e, o) {
-		return new Opv(elt(o, 0), elt(o, 1), elt(o, 2), e);
+		return new Opv(pcheck(elt(o, 0)), elt(o, 1), elt(o, 2), e);
 	};
-	Def.prototype.wat_combine = function self(m, e, o) { // error handling
-		var lhs = elt(o, 0);
+	Def.prototype.wat_combine = function(m, e, o) { // error handling
+		var lhs = pcheck(elt(o, 0));
 		var rhs = elt(o, 1);
 		return monadic(
 			null,
 			function() { return evaluate(null, e, rhs); },
 			function(val) { return bind(e, lhs, val); }
 		);
+	}
+	function pcheck(p) {
+		return pcheck(p), p
+		function pcheck(x) {
+			if (x === NIL || x == IGN || x instanceof Sym) return
+			if (x instanceof Cons) return pcheck(car(x)), pcheck(cdr(x))
+			throw error("not a symbol " + to_string(x) + " in: " + p)
+		}
 	}
 	Eval.prototype.wat_combine = function(m, e, o) { // error handling
 		var x = elt(o, 0);
@@ -112,22 +125,21 @@ module.exports = function Qua() {
 	};
 	
 	/* First-order Control */
-	function Begin() { }; function If() { }; function Loop() { }
-	function Catch() { }; function Finally() { }
+	function Begin() { }; function If() { }; function Loop() { }; function Catch() { }; function Finally() { }
 	Begin.prototype.wat_combine = function(m, e, o) {
 		return o === NIL ? null : begin(m, e, o);
+		function begin(m, e, xs) {
+			return monadic(
+				null,
+				function() { return evaluate(null, e, car(xs)); },
+				function(res) {
+					var kdr = cdr(xs);
+					return kdr === NIL ? res : begin(null, e, kdr);
+				}
+			);
+		}
 	};
-	function begin(m, e, xs) {
-		return monadic(
-			null,
-			function() { return evaluate(null, e, car(xs)); },
-			function(res) {
-				var kdr = cdr(xs);
-				return kdr === NIL ? res : begin(null, e, kdr);
-			}
-		);
-	}
-	If.prototype.wat_combine = function self(m, e, o) {
+	If.prototype.wat_combine = function(m, e, o) {
 		return monadic(
 			null,
 			function() { return evaluate(null, e, elt(o, 0)); },
@@ -168,12 +180,12 @@ module.exports = function Qua() {
 		finally {
 			return isSuspension(res) ? res : doCleanup(null, e, cleanup, res)
 		}
+		function doCleanup(m, e, cleanup, res) {
+			var fres = isResumption(m) ? resumeFrame(m) : evaluate(null, e, cleanup)
+			if (isSuspension(fres)) suspendFrame(fres, function(m) { return doCleanup(m, e, cleanup, res); }, cleanup, e);
+			return fres;
+		}
 	};
-	function doCleanup(m, e, cleanup, res) {
-		var fres = isResumption(m) ? resumeFrame(m) : evaluate(null, e, cleanup)
-		if (isSuspension(fres)) suspendFrame(fres, function(m) { return doCleanup(m, e, cleanup, res); }, cleanup, e);
-		return fres;
-	}
 	
 	/* Delimited Control */
 	function PushPrompt() { }; function TakeSubcont() {	}; function PushSubcont() { }; function PushPromptSubcont() { }
@@ -223,8 +235,7 @@ module.exports = function Qua() {
 	};
 	
 	/* Dynamic Variables */
-	function DV(val) { this.val = val; }
-	function DNew() { }; function DRef() { }; function DLet() { }
+	function DV(val) { this.val = val; }; function DNew() { }; function DRef() { }; function DLet() { }
 	DNew.prototype.wat_combine = function(m, e, o) { return new DV(elt(o, 0)); };
 	DRef.prototype.wat_combine = function(m, e, o) { return elt(o, 0).val; };
 	DLet.prototype.wat_combine = function self(m, e, o) {
@@ -263,7 +274,13 @@ module.exports = function Qua() {
 		? e.bindings[name]
 		: error("unbound: " + name);
 	}
-	function bind(e, lhs, rhs) { return lhs.wat_match ? lhs.wat_match(e, rhs) : error("cannot match against: " + lhs); }
+	
+	function bind(e, lhs, rhs) {
+		if (lhs.wat_match)
+			return lhs.wat_match(e, rhs)
+		else
+			return error("cannot match against: " + lhs);
+	}
 	Sym.prototype.wat_match = function(e, rhs) { return e.bindings[this.name] = rhs; }
 	Cons.prototype.wat_match = function(e, rhs) {
 		var that = this;
