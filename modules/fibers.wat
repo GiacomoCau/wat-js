@@ -53,7 +53,7 @@
   (def (schedule-fiber k)
     (def (callback . #ignore)
       (push-prompt-subcont fiber-prompt k))
-    ($setTimeout (js-callback callback) 0))
+    (&setTimeout (js-callback callback) 0))
 
   (def (go fun)
     (push-prompt fiber-prompt

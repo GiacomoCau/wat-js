@@ -21,23 +21,23 @@
 
 (define (run-thread (id Number))
   (let ((ball (object 
-                ("x" (+ 300 ($random_offset 200)))
-                ("y" (+ 240 ($random_offset 100)))
+                ("x" (+ 300 (&random_offset 200)))
+                ("y" (+ 240 (&random_offset 100)))
                 ("radius" 5)
                 ("color" "#ff0000")
-                ("dx" ($random_offset 3))
-                ("dy" ($random_offset 3))
+                ("dx" (&random_offset 3))
+                ("dy" (&random_offset 3))
                 ("id" id))))
-    (@push $BALLS ball)
+    (@push &BALLS ball)
     (loop
-      ($move_ball ball)
+      (&move_ball ball)
       (sleep))))
 
 (define (sleep)
   (take-subcont default-prompt k
     (define (callback . #ignore)
       (push-prompt-subcont default-prompt k))
-    ($setImmediate (js-callback callback))))
+    (&setImmediate (js-callback callback))))
 
 (spawn-thread 100)
 

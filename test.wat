@@ -111,7 +111,7 @@
 
 (assert-equal 2 (apply (lambda x x) 2))
 
-(assert-throws (unwrap (_vau () #ignore)))
+(assert-throws (unwrap ($vau () #ignore)))
 
 
 (let ((obj (object ("x" 1))))
@@ -122,9 +122,9 @@
   (assert-equal 3 (.x obj)) )
 
 
-;(assert-equal $x #undefined) ; non funzica
-(set $x 2)
-(assert-equal $x 2)
+;(assert-equal &x #undefined) ; non funzica
+(set &x 2)
+(assert-equal &x 2)
 
 (assert-equal 24 (* 1 2 3 4))
 (assert-equal 1 (*))

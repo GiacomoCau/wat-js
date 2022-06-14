@@ -3,67 +3,68 @@
 ;; ``72. An adequate bootstrap is a contradiction in terms.''
 
 ;; Rename ur-def
-(vm-def _define vm-def)
+(vm-def $define vm-def)
 
 ;; Rename bindings that will be used as provided by VM
-(_define array->list vm-array-to-list)
-(_define begin vm-begin)
-(_define cons vm-cons)
-(_define cons? vm-cons?)
-(_define dnew vm-dnew)
-(_define dref vm-dref)
-(_define error vm-error)
-(_define eval vm-eval)
-(_define if vm-if)
-(_define js-getter vm-js-getter)
-(_define js-global vm-js-global)
-(_define js-invoker vm-js-invoker)
-(_define list* vm-list*)
-(_define list->array vm-list-to-array)
-(_define make-environment vm-make-environment)
-(_define new vm-js-new)
-(_define nil? vm-nil?)
-(_define reverse-list vm-reverse-list)
-(_define setter vm-setter)
-(_define string->symbol vm-string-to-symbol)
-(_define symbol-name vm-symbol-name)
-(_define symbol? vm-symbol?)
-(_define throw vm-throw)
-(_define unwrap vm-unwrap)
-(_define wrap vm-wrap)
+($define array->list vm-array-to-list)
+($define begin vm-begin)
+($define cons vm-cons)
+($define cons? vm-cons?)
+($define dnew vm-dnew)
+($define dref vm-dref)
+($define error vm-error)
+($define eval vm-eval)
+($define if vm-if)
+($define js-getter vm-js-getter)
+($define js-global vm-js-global)
+($define js-invoker vm-js-invoker)
+($define list* vm-list*)
+($define list->array vm-list-to-array)
+($define make-environment vm-make-environment)
+($define new vm-js-new)
+($define nil? vm-nil?)
+($define reverse-list vm-reverse-list)
+($define setter vm-setter)
+($define string->symbol vm-string-to-symbol)
+($define symbol-name vm-symbol-name)
+($define symbol? vm-symbol?)
+($define throw vm-throw)
+($define unwrap vm-unwrap)
+($define wrap vm-wrap)
 
 ;; Important utilities
-(_define quote (vm-vau (x) #ignore x))
-(_define list (wrap (vm-vau elts #ignore elts)))
-(_define the-environment (vm-vau () e e))
+($define $vau vm-vau)
+($define quote ($vau (x) #ignore x))
+($define list (wrap ($vau elts #ignore elts)))
+($define the-environment ($vau () e e))
 
 ;;;; Macro and vau
 
-(_define make-macro-expander
+($define make-macro-expander
   (wrap
-    (vm-vau (expander) #ignore
-      (vm-vau operands env
-        (eval (eval (cons expander operands) (make-environment)) env)))))
+    ($vau (expander) #ignore
+      ($vau operands env
+        (eval (eval (cons expander operands) (make-environment)) env) ))))
 
-(_define _vau
+($define $vau
   (make-macro-expander
-    (vm-vau (params env-param . body) #ignore
-      (list vm-vau params env-param (list* begin body)))))
+    ($vau (params env-param . body) #ignore
+      (list vm-vau params env-param (list* begin body)) )))
 
-(_define macro
+($define macro
   (make-macro-expander
-    (_vau (params . body) #ignore
-      (list make-macro-expander (list* _vau params #ignore body)))))
+    ($vau (params . body) #ignore
+      (list make-macro-expander (list* $vau params #ignore body)) )))
 
-(_define define-macro
+($define define-macro
   (macro ((name . params) . body)
-    (list _define name (list* macro params body))))
+    (list $define name (list* macro params body)) ))
 
-(define-macro (_lambda params . body)
-  (list wrap (list* _vau params #ignore body)))
+(define-macro ($lambda params . body)
+  (list wrap (list* $vau params #ignore body)) )
 
 (define-macro (define-operative (name . params) envparam . body)
-  (list _define name (list* _vau params envparam body)))
+  (list $define name (list* $vau params envparam body)) )
 
 ;;;; Wrap incomplete VM forms
 
@@ -77,49 +78,49 @@
   (eval (list vm-push-prompt (eval prompt env) (list* begin body)) env))
 
 (define-macro (take-subcont prompt k . body)
-  (list vm-take-subcont prompt (list* _lambda (list k) body)))
+  (list vm-take-subcont prompt (list* $lambda (list k) body)))
 
 (define-macro (push-subcont k . body)
-  (list vm-push-subcont k (list* _lambda () body)))
+  (list vm-push-subcont k (list* $lambda () body)))
 
 (define-macro (push-prompt-subcont p k . body)
-  (list vm-push-prompt-subcont p k (list* _lambda () body)))
+  (list vm-push-prompt-subcont p k (list* $lambda () body)))
 
 ;;;; List utilities
 
-(_define compose (_lambda (f g) (_lambda (arg) (f (g arg)))))
+($define compose ($lambda (f g) ($lambda (arg) (f (g arg)))))
 
-(_define car (_lambda ((x . #ignore)) x))
-(_define cdr (_lambda ((#ignore . x)) x))
-(_define caar (compose car car))
-(_define cadr (compose car cdr))
-(_define cdar (compose cdr car))
-(_define cddr (compose cdr cdr))
+($define car ($lambda ((x . #ignore)) x))
+($define cdr ($lambda ((#ignore . x)) x))
+($define caar (compose car car))
+($define cadr (compose car cdr))
+($define cdar (compose cdr car))
+($define cddr (compose cdr cdr))
 
 ;;;; Important macros and functions
 
-(_define map-list
-  (_lambda (f lst)
+($define map-list
+  ($lambda (f lst)
     (if (nil? lst)
         ()
         (cons (f (car lst)) (map-list f (cdr lst))))))
 
-(_define list-for-each
-  (_lambda (f lst)
+($define list-for-each
+  ($lambda (f lst)
     (if (nil? lst)
         ()
         (begin (f (car lst)) (list-for-each f (cdr lst))))))
 
-(_define list-keep
-  (_lambda (p lst)
+($define list-keep
+  ($lambda (p lst)
     (if (nil? lst)
         ()
         (if (p (car lst))
             (cons (car lst) (list-keep p (cdr lst)))
             (list-keep p (cdr lst))))))
 
-(_define fold-list
-  (_lambda (f init lst)
+($define fold-list
+  ($lambda (f init lst)
     (if (nil? lst)
         init
         (fold-list f (f init (car lst)) (cdr lst)))))
@@ -127,11 +128,11 @@
 (define-macro (let x . rest)
   (if (symbol? x)
       (list* let-loop x rest)
-      (list* (list* _lambda (map-list car x) rest)
+      (list* (list* $lambda (map-list car x) rest)
              (map-list cadr x))))
 
 (define-macro (let-loop name bindings . body)
-  (list letrec (list (list name (list* _lambda (map-list car bindings)
+  (list letrec (list (list name (list* $lambda (map-list car bindings)
                                        body)))
         (list* name (map-list cadr bindings))))
 
@@ -143,14 +144,14 @@
 
 (define-macro (letrec bindings . body)
   (list* let ()
-         (list _define
+         (list $define
                (map-list car bindings)
                (list* list (map-list cadr bindings)))
          body))
 
 (define-macro (lambda params . body)
   (letrec ((typed-params->names-and-checks
-            (_lambda (ps)
+            ($lambda (ps)
               (if (cons? ps)
                   (let* (((p . rest-ps) ps)
                          ((names . checks) (typed-params->names-and-checks rest-ps)))
@@ -161,15 +162,15 @@
                         (cons (cons p names) checks)))
                   (cons ps ())))))
     (let (((untyped-names . type-checks) (typed-params->names-and-checks params)))
-      (list* _lambda untyped-names (list* begin type-checks) body))))
+      (list* $lambda untyped-names (list* begin type-checks) body))))
 
 (define-macro (define lhs . rhs)
   (if (cons? lhs)
-    (list _define (car lhs) (list* lambda (cdr lhs) rhs))
-    (list _define lhs (car rhs))))
+    (list $define (car lhs) (list* lambda (cdr lhs) rhs))
+    (list $define lhs (car rhs))))
 
 (define (apply appv arg . opt)
-  (if (instanceof appv $Function)
+  (if (instanceof appv &Function)
       (@apply appv #null (list->array arg))
       (eval (cons (unwrap appv) arg)
             (if (nil? opt)
@@ -202,15 +203,15 @@
 
 (define (call-with-escape fun)
   (let ((fresh (list #null)))
-    (catch (fun (_lambda opt-arg (throw (list fresh opt-arg))))
-      (_lambda (exc)
+    (catch (fun ($lambda opt-arg (throw (list fresh opt-arg))))
+      ($lambda (exc)
         (if (and (cons? exc) (=== fresh (car exc)))
             (let ((opt-arg (cadr exc)))
               (if (cons? opt-arg) (car opt-arg) #undefined))
             (throw exc))))))
 
 (define-macro (label name . body)
-  (list call-with-escape (list* _lambda (list name) body)))
+  (list call-with-escape (list* $lambda (list name) body)))
 
 (define-operative (while test . body) env
   (let ((body (list* begin body)))
@@ -245,17 +246,17 @@
 ;;;; Prototypes
 
 (define-operative (define-prototype name super-name prop-names) env
-  (eval (list _define name (make-prototype name super-name prop-names env)) env))
+  (eval (list $define name (make-prototype name super-name prop-names env)) env))
 
 (define (make-prototype name super-name prop-names env)
   (let ((p (apply vm-js-make-prototype (list* (symbol-name name) (map-list symbol-name prop-names))))
         (super (eval super-name env)))
-    (set (.prototype p) (@create $Object (.prototype super)))
+    (set (.prototype p) (@create &Object (.prototype super)))
     (set (.constructor (.prototype p)) super)
     p ))
 
 (define-macro (define-generic (name . #ignore))
-  (list _define name (lambda args (apply ((js-getter name) (car args)) args))))
+  (list $define name (lambda args (apply ((js-getter name) (car args)) args))))
 
 (define-macro (define-method (name (self ctor) . args) . body)
   (list put-method ctor (symbol-name name) (list* lambda (list* self args) body)))
@@ -267,7 +268,7 @@
 
 (define-operative (provide symbols . body) env
   (eval
-    (list _define symbols
+    (list $define symbols
       (list let ()
         (list* begin body)
         (list* list symbols) ))
@@ -279,12 +280,12 @@
     (make-environment menv)))
 
 (define-macro (define-module name exports . body)
-  (list _define name (list* module exports body)))
+  (list $define name (list* module exports body)))
 
 (define-operative (import module imports) env
   (let* ((m (eval module env))
-         (values (map-list (_lambda (import) (eval import m)) imports)))
-    (eval (list _define imports (list* list values)) env)))
+         (values (map-list ($lambda (import) (eval import m)) imports)))
+    (eval (list $define imports (list* list values)) env)))
 
 ;;;; JavaScript
 
@@ -346,7 +347,7 @@
 
 (define-operative (object . pairs) env
   (let ((obj (vm-js-make-object)))
-    (map-list (_lambda ((name value))
+    (map-list ($lambda ((name value))
                 (set ((js-getter (eval name env)) obj) (eval value env)))
               pairs)
     obj))
@@ -361,7 +362,7 @@
 (define (array . args) (list->array args))
 
 (define (js-callback fun)
-  (vm-js-function (_lambda args (push-prompt vm-root-prompt (apply fun args)))) )
+  (vm-js-function ($lambda args (push-prompt vm-root-prompt (apply fun args)))) )
 
 (define-macro (js-lambda params . body)
   (list js-callback (list* lambda params body)))
@@ -372,17 +373,17 @@
 (define-macro (the type obj)
   (list if (list type? obj type) obj (list error (list + obj " is not a: " type))) )
 
-(define Array $Array)
-(define Boolean $Boolean)
-(define Date $Date)
-(define Function $Function)
-(define Number $Number)
-(define Object $Object)
-(define RegExp $RegExp)
-(define String $String)
+(define Array &Array)
+(define Boolean &Boolean)
+(define Date &Date)
+(define Function &Function)
+(define Number &Number)
+(define Object &Object)
+(define RegExp &RegExp)
+(define String &String)
 
 (define (log x . xs)
-  (apply @log (list* $console x xs))
+  (apply @log (list* &console x xs))
   x)
 
 ;;;; Cells
@@ -456,7 +457,7 @@
 (define (print-stacktrace err)
   (define (print-frame k)
     (log (@toString (.fun k)) (.dbg k) (.e k)) ;; @toString di .dbg == undefined no buono
-    (when (vm-type? (.next k) $StackFrame) ;; .next di !StackFrame no buono!
+    (when (type? (.next k) &StackFrame) ;; .next di !StackFrame no buono!
     	(print-frame (.next k)) ))
   (take-subcont vm-root-prompt k
   	(log err)

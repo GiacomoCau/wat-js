@@ -16,15 +16,15 @@
 
 (define (run-thread (id String))
   (loop
-    (@appendChild (.body $document)
-                  (@createTextNode $document (+ "Active thread: " id " ")))
-    (sleep (* 1000 (@random $Math)))))
+    (@appendChild (.body &document)
+                  (@createTextNode &document (+ "Active thread: " id " ")))
+    (sleep (* 1000 (@random &Math)))))
 
 (define (sleep (ms Number))
   (take-subcont default-prompt k
     (define (callback . #ignore)
       (push-prompt-subcont default-prompt k))
-    ($setTimeout (js-callback callback) ms)))
+    (&setTimeout (js-callback callback) ms)))
 
 (spawn-thread "thread-1")
 (spawn-thread "thread-2")
