@@ -30,10 +30,8 @@ module.exports = function Qua() {
 	
 	/* Evaluation Core */
 	function evaluate(m, e, x) {
-		 if (x && x.wat_eval)
-		 	return x.wat_eval(m, e)
-		 else
-		 	return x
+		 if (!x || !x.wat_eval) return x
+		 return x.wat_eval(m, e)
 	}
 	function Sym(name) { this.name = name }
 	function sym(name) { return new Sym(name) }
@@ -62,7 +60,7 @@ module.exports = function Qua() {
 	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
 	Opv.prototype.wat_combine = function(m, e, o) {
 		var that = this
-		var xe = make_env(that.e)
+		var xe = env(that.e)
 		return monadic(
 			null,
 			function() { return bind(xe, that.p, o) },
@@ -82,15 +80,14 @@ module.exports = function Qua() {
 			function() { return evalArgs(null, e, o, NIL) },
 			function(args) { return that.cmb.wat_combine(null, e, args) }
 		)
-	}
-	// TODO make inner
-	function evalArgs(m, e, todo, done) {
-		if (todo === NIL) return reverse_list(done) 
-		return monadic(
-			null,
-			function() { return evaluate(null, e, car(todo)) },
-			function(arg) { return evalArgs(null, e, cdr(todo), cons(arg, done)) }
-		)
+		function evalArgs(m, e, todo, done) {
+			if (todo === NIL) return reverse_list(done) 
+			return monadic(
+				null,
+				function() { return evaluate(null, e, car(todo)) },
+				function(arg) { return evalArgs(null, e, cdr(todo), cons(arg, done)) }
+			)
+		}
 	}
 	
 	/* Built-in Combiners */
@@ -266,15 +263,13 @@ module.exports = function Qua() {
 	
 	/* Environment */
 	function Env(parent) { this.bindings = Object.create(!parent ? null : parent.bindings); this.parent = parent }
-	// TODO meglio env?
-	function make_env(parent) { return new Env(parent) }
+	function env(parent) { return new Env(parent) }
 	function lookup(e, name) { return name in e.bindings ? e.bindings[name] : error("unbound: " + name) }
 	
 	function bind(e, lhs, rhs) {
 		if (lhs.wat_match)
 			return lhs.wat_match(e, rhs)
-		else
-			return error("cannot match against: " + lhs)
+		return error("cannot match against: " + lhs)
 	}
 	Sym.prototype.wat_match = function(e, rhs) { return e.bindings[this.name] = rhs }
 	Cons.prototype.wat_match = function(e, rhs) {
@@ -320,12 +315,11 @@ module.exports = function Qua() {
 		for (var i = array.length; i > 0; i--) c = cons(array[i - 1], c)
 		return c
 	}
-	// TODO for invece che while
 	function list_to_array(c) {
-		var res = []; while (c !== NIL) { res.push(car(c)); c = cdr(c) }; return res
+		for (var res = []; c !== NIL; c = cdr(c)) res.push(car(c)); return res
 	}
 	function reverse_list(list) {
-		var res = NIL; while (list !== NIL) { res = cons(car(list), res); list = cdr(list) }; return res
+		for (var res = NIL; list !== NIL; list = cdr(list)) res = cons(car(list), res); return res
 	}
 	
 	/* Bytecode parser */
@@ -335,14 +329,13 @@ module.exports = function Qua() {
 			case "[object Array]": return parse_bytecode_array(obj)
 			default: return obj
 		}
-	}
-	// TODO make inner
-	function parse_bytecode_array(arr) {
-		if ((arr.length == 2) && arr[0] === "wat-string") return arr[1]
-		var i = arr.indexOf(".")
-		if (i === -1) return array_to_list(arr.map(parse_bytecode))
-		var front = arr.slice(0, i)
-		return array_to_list(front.map(parse_bytecode), parse_bytecode(arr[i + 1]))
+		function parse_bytecode_array(arr) {
+			if ((arr.length == 2) && arr[0] === "wat-string") return arr[1]
+			var i = arr.indexOf(".")
+			if (i === -1) return array_to_list(arr.map(parse_bytecode))
+			var front = arr.slice(0, i)
+			return array_to_list(front.map(parse_bytecode), parse_bytecode(arr[i + 1]))
+		}
 	}
 	
 	/* JSNI */
@@ -457,7 +450,7 @@ module.exports = function Qua() {
 	JSFun.prototype.toString = function() { return "[JSFun " + this.jsfun.toString() + "]" }
 	
 	/* Bootstrap */
-	var the_environment = make_env()
+	var the_environment = env()
 	bind(the_environment, sym("vm-def"), new Def())
 	bind(the_environment, sym("vm-begin"), new Begin())
 	var builtin_bytecode =
@@ -465,7 +458,7 @@ module.exports = function Qua() {
 			// Basics
 			["vm-def", "vm-vau", new Vau()],
 			["vm-def", "vm-eval", wrap(new Eval())],
-			["vm-def", "vm-make-environment", jswrap(function(parent) { return make_env(parent) })],
+			["vm-def", "vm-make-environment", jswrap(function(parent) { return env(parent) })],
 			["vm-def", "vm-wrap", jswrap(wrap)],
 			["vm-def", "vm-unwrap", jswrap(unwrap)],
 			// Values
