@@ -3,68 +3,80 @@
 ;; ``72. An adequate bootstrap is a contradiction in terms.''
 
 ;; Rename ur-def
-(vm-def $define vm-def)
+(vm-def $define! vm-def)
 
 ;; Rename bindings that will be used as provided by VM
-($define array->list vm-array-to-list)
-($define begin vm-begin)
-($define cons vm-cons)
-($define cons? vm-cons?)
-($define dnew vm-dnew)
-($define dref vm-dref)
-($define error vm-error)
-($define eval vm-eval)
-($define if vm-if)
-($define js-getter vm-js-getter)
-($define js-global vm-js-global)
-($define js-invoker vm-js-invoker)
-($define list* vm-list*)
-($define list->array vm-list-to-array)
-($define make-environment vm-make-environment)
-($define new vm-js-new)
-($define nil? vm-nil?)
-($define reverse-list vm-reverse-list)
-($define setter vm-setter)
-($define string->symbol vm-string-to-symbol)
-($define symbol-name vm-symbol-name)
-($define symbol? vm-symbol?)
-($define throw vm-throw)
-($define unwrap vm-unwrap)
-($define wrap vm-wrap)
+($define! array->list vm-array-to-list)
+($define! begin vm-begin)
+($define! cons vm-cons)
+($define! cons? vm-cons?)
+($define! dnew vm-dnew)
+($define! dref vm-dref)
+($define! error vm-error)
+($define! eval vm-eval)
+($define! if vm-if)
+($define! js-getter vm-js-getter)
+($define! js-global vm-js-global)
+($define! js-invoker vm-js-invoker)
+($define! list* vm-list*)
+($define! list->array vm-list-to-array)
+($define! make-environment vm-make-environment)
+($define! new vm-js-new)
+($define! nil? vm-nil?)
+($define! reverse-list vm-reverse-list)
+($define! setter vm-setter)
+($define! string->symbol vm-string-to-symbol)
+($define! symbol-name vm-symbol-name)
+($define! symbol? vm-symbol?)
+($define! throw vm-throw)
+($define! unwrap vm-unwrap)
+($define! wrap vm-wrap)
 
 ;; Important utilities
-($define $vau vm-vau)
-($define quote ($vau (x) #ignore x))
-($define list (wrap ($vau elts #ignore elts)))
-($define the-environment ($vau () e e))
+($define! $vau vm-vau)
+($define! quote ($vau (x) #ignore x))
+($define! list (wrap ($vau elts #ignore elts)))
+($define! the-environment ($vau () e e))
+($define! get-current-environment (wrap ($vau () e e)))
 
 ;;;; Macro and vau
 
-($define make-macro-expander
+; derivazione Shutt!
+;($define! $vau
+; ((wrap
+;     ($vau ($vau) #ignore
+;       ($vau (formals eformal . body) env
+;         (eval (list $vau formals eformal (cons begin body)) env) )))
+;   $vau ))
+
+($define! make-macro-expander
   (wrap
     ($vau (expander) #ignore
       ($vau operands env
         (eval (eval (cons expander operands) (make-environment)) env) ))))
 
-($define $vau
+; derivazione Simoni!
+($define! $vau
   (make-macro-expander
     ($vau (params env-param . body) #ignore
       (list vm-vau params env-param (list* begin body)) )))
 
-($define macro
+
+
+($define! macro
   (make-macro-expander
     ($vau (params . body) #ignore
       (list make-macro-expander (list* $vau params #ignore body)) )))
 
-($define define-macro
+($define! define-macro
   (macro ((name . params) . body)
-    (list $define name (list* macro params body)) ))
+    (list $define! name (list* macro params body)) ))
 
 (define-macro ($lambda params . body)
   (list wrap (list* $vau params #ignore body)) )
 
 (define-macro (define-operative (name . params) envparam . body)
-  (list $define name (list* $vau params envparam body)) )
+  (list $define! name (list* $vau params envparam body)) )
 
 ;;;; Wrap incomplete VM forms
 
@@ -72,79 +84,78 @@
   (list vm-loop (list* begin body)))
 
 (define-operative (catch protected handler) env
-  (eval (list vm-catch protected (eval handler env)) env))
+  (eval (list vm-catch protected (eval handler env)) env) )
 
 (define-operative (push-prompt prompt . body) env
-  (eval (list vm-push-prompt (eval prompt env) (list* begin body)) env))
+  (eval (list vm-push-prompt (eval prompt env) (list* begin body)) env) )
 
 (define-macro (take-subcont prompt k . body)
-  (list vm-take-subcont prompt (list* $lambda (list k) body)))
+  (list vm-take-subcont prompt (list* $lambda (list k) body)) )
 
 (define-macro (push-subcont k . body)
-  (list vm-push-subcont k (list* $lambda () body)))
+  (list vm-push-subcont k (list* $lambda () body)) )
 
 (define-macro (push-prompt-subcont p k . body)
-  (list vm-push-prompt-subcont p k (list* $lambda () body)))
+  (list vm-push-prompt-subcont p k (list* $lambda () body)) )
 
 ;;;; List utilities
 
-($define compose ($lambda (f g) ($lambda (arg) (f (g arg)))))
+($define! compose ($lambda (f g) ($lambda (arg) (f (g arg)))))
 
-($define car ($lambda ((x . #ignore)) x))
-($define cdr ($lambda ((#ignore . x)) x))
-($define caar (compose car car))
-($define cadr (compose car cdr))
-($define cdar (compose cdr car))
-($define cddr (compose cdr cdr))
+($define! car ($lambda ((x . #ignore)) x))
+($define! cdr ($lambda ((#ignore . x)) x))
+($define! caar (compose car car))
+($define! cadr (compose car cdr))
+($define! cdar (compose cdr car))
+($define! cddr (compose cdr cdr))
 
 ;;;; Important macros and functions
 
-($define map-list
+($define! map-list
   ($lambda (f lst)
     (if (nil? lst)
         ()
-        (cons (f (car lst)) (map-list f (cdr lst))))))
+        (cons (f (car lst)) (map-list f (cdr lst))) )))
 
-($define list-for-each
+($define! list-for-each
   ($lambda (f lst)
     (if (nil? lst)
         ()
-        (begin (f (car lst)) (list-for-each f (cdr lst))))))
+        (begin (f (car lst)) (list-for-each f (cdr lst))) )))
 
-($define list-keep
+($define! list-keep
   ($lambda (p lst)
     (if (nil? lst)
         ()
         (if (p (car lst))
             (cons (car lst) (list-keep p (cdr lst)))
-            (list-keep p (cdr lst))))))
+            (list-keep p (cdr lst)) ))))
 
-($define fold-list
+($define! fold-list
   ($lambda (f init lst)
     (if (nil? lst)
         init
-        (fold-list f (f init (car lst)) (cdr lst)))))
+        (fold-list f (f init (car lst)) (cdr lst)) )))
 
 (define-macro (let x . rest)
   (if (symbol? x)
       (list* let-loop x rest)
       (list* (list* $lambda (map-list car x) rest)
-             (map-list cadr x))))
+             (map-list cadr x) )))
 
 (define-macro (let-loop name bindings . body)
-  (list letrec (list (list name (list* $lambda (map-list car bindings)
-                                       body)))
-        (list* name (map-list cadr bindings))))
+  (list letrec (list (list name (list* $lambda (map-list car bindings) body)))
+        (list* name (map-list cadr bindings) )))
 
 (define-macro (let* bindings . body)
   (if (nil? bindings)
       (list* let () body)
       (list let (list (car bindings))
-            (list* let* (cdr bindings) body))))
+            (list* let* (cdr bindings) body) )))
 
 (define-macro (letrec bindings . body)
   (list* let ()
-         (list $define
+         (list $define!
                (map-list car bindings)
                (list* list (map-list cadr bindings)))
          body))
@@ -166,8 +177,8 @@
 
 (define-macro (define lhs . rhs)
   (if (cons? lhs)
-    (list $define (car lhs) (list* lambda (cdr lhs) rhs))
-    (list $define lhs (car rhs))))
+    (list $define! (car lhs) (list* lambda (cdr lhs) rhs))
+    (list $define! lhs (car rhs))))
 
 (define (apply appv arg . opt)
   (if (instanceof appv &Function)
@@ -246,7 +257,7 @@
 ;;;; Prototypes
 
 (define-operative (define-prototype name super-name prop-names) env
-  (eval (list $define name (make-prototype name super-name prop-names env)) env))
+  (eval (list $define! name (make-prototype name super-name prop-names env)) env))
 
 (define (make-prototype name super-name prop-names env)
   (let ((p (apply vm-js-make-prototype (list* (symbol-name name) (map-list symbol-name prop-names))))
@@ -256,7 +267,7 @@
     p ))
 
 (define-macro (define-generic (name . #ignore))
-  (list $define name (lambda args (apply ((js-getter name) (car args)) args))))
+  (list $define! name (lambda args (apply ((js-getter name) (car args)) args))))
 
 (define-macro (define-method (name (self ctor) . args) . body)
   (list put-method ctor (symbol-name name) (list* lambda (list* self args) body)))
@@ -268,7 +279,7 @@
 
 (define-operative (provide symbols . body) env
   (eval
-    (list $define symbols
+    (list $define! symbols
       (list let ()
         (list* begin body)
         (list* list symbols) ))
@@ -277,15 +288,15 @@
 (define-operative (module exports . body) env
   (let ((menv (make-environment env)))
     (eval (list* provide exports body) menv)
-    (make-environment menv)))
+    (make-environment menv) ))
 
 (define-macro (define-module name exports . body)
-  (list $define name (list* module exports body)))
+  (list $define! name (list* module exports body)) )
 
 (define-operative (import module imports) env
   (let* ((m (eval module env))
          (values (map-list ($lambda (import) (eval import m)) imports)))
-    (eval (list $define imports (list* list values)) env)))
+    (eval (list $define! imports (list* list values)) env) ))
 
 ;;;; JavaScript
 
