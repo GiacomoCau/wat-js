@@ -7,7 +7,7 @@ function parse_sexp(s) {
 	s = s.trimRight()
 	var res = program_stx(ps(s))
 	if (res.remaining.index === s.length) return res.ast
-	throw ("parse error at " + res.remaining.index + "\n" + s.length + "\n" + res.remaining)
+	throw ("parse error at char " + res.remaining.index + "\nrest to parse: " + res.remaining)
 }
 
 var x_stx = function(input) { return x_stx(input) } // forward decl.

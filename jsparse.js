@@ -77,7 +77,7 @@ ParseState.prototype.at = function(index) {
 }
 
 ParseState.prototype.toString = function() {
-	return 'PS"' + this.substring(0) + '"'
+	return '"' + this.substring(0) + '"'
 }
 
 ParseState.prototype.getCached = function(pid) {
