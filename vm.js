@@ -6,15 +6,13 @@ module.exports = function Qua() {
 
 	function Resumption(k, f) { this.k = k; this.f = f }
 	function isResumption(m) { return m instanceof Resumption }
+	function resumeFrame(m) { return m.k.fun(new Resumption(m.k.next, m.f)) }
 
 	function Suspension(prompt, handler) { this.prompt = prompt; this.handler = handler; this.k = null	}
 	function isSuspension(x) { return x instanceof Suspension }
-
 	function suspendFrame(suspension, fun, dbg, e) {
 		suspension.k = new StackFrame(fun, suspension.k, dbg, e)
-	}
-	function resumeFrame(m) {
-		return m.k.fun(new Resumption(m.k.next, m.f))
+		return suspension
 	}
 
 	function monadic(m, a, b) {
@@ -24,8 +22,7 @@ module.exports = function Qua() {
 			var res = resumeFrame(m)
 		if (!isSuspension(res))
 			return b(res)
-		suspendFrame(res, function(m) { return monadic(m, a, b) })
-		return res
+		return suspendFrame(res, function(m) { return monadic(m, a, b) })
 	}
 	
 	/* Evaluation Core */
@@ -55,9 +52,6 @@ module.exports = function Qua() {
 		return error("not a combiner: " + to_string(cmb))
 	}
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
-	function Apv(cmb) { this.cmb = cmb }
-	function wrap(cmb) { return new Apv(cmb) } // type check
-	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
 	Opv.prototype.wat_combine = function(m, e, o) {
 		var that = this
 		var xe = env(that.e)
@@ -73,6 +67,7 @@ module.exports = function Qua() {
 			}
 		)
 	}
+	function Apv(cmb) { this.cmb = cmb }
 	Apv.prototype.wat_combine = function(m, e, o) {
 		var that = this
 		return monadic(
@@ -89,14 +84,21 @@ module.exports = function Qua() {
 			)
 		}
 	}
+	// TODO capire perché JSFun non ha wat_combine che dovrebbe avere
+	function wrap(cmb) { return cmb && (cmb.wat_combine || cmb instanceof JSFun) ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
+	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
 	
 	/* Built-in Combiners */
 	function Vau() { }; function Def() { }; function Eval() { }
 	Vau.prototype.wat_combine = function(m, e, o) {
-		return new Opv(pcheck(elt(o, 0)), elt(o, 1), elt(o, 2), e)
+		// o = (ptree envp expr)
+		var ptree = elt(o, 0)
+		var err = pcheck(ptree); if (err) return err
+		return new Opv(ptree, elt(o, 1), elt(o, 2), e)
 	}
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
-		var lhs = pcheck(elt(o, 0))
+		var lhs = elt(o, 0);
+		var err = pcheck(lhs); if (err) return err
 		var rhs = elt(o, 1)
 		return monadic(
 			null,
@@ -105,11 +107,15 @@ module.exports = function Qua() {
 		)
 	}
 	function pcheck(p) {
-		return pcheck(p), p
+		return pcheck(p)
 		function pcheck(x) {
 			if (x === NIL || x == IGN || x instanceof Sym) return
-			if (x instanceof Cons) return pcheck(car(x)), pcheck(cdr(x))
-			throw error("not a symbol " + to_string(x) + " in: " + p)
+			if (x instanceof Cons) {
+				 var err = pcheck(car(x))
+				 if (err) return err
+				 return pcheck(cdr(x))
+			}
+			return error("not a symbol: " + to_string(x) + " in: " + p)
 		}
 	}
 	Eval.prototype.wat_combine = function(m, e, o) { // error handling
@@ -145,10 +151,7 @@ module.exports = function Qua() {
 		while (true) {
 			var res = first && isResumption(m) ? resumeFrame(m) : evaluate(null, e, elt(o, 0))
 			first = false
-			if (isSuspension(res)) {
-				suspendFrame(res, function(m) { return self(m, e, o) }, elt(o, 0), e)
-				return res
-			}
+			if (isSuspension(res)) return suspendFrame(res, function(m) { return self(m, e, o) }, elt(o, 0), e)
 		}
 	}
 	Catch.prototype.wat_combine = function self(m, e, o) {
@@ -186,15 +189,9 @@ module.exports = function Qua() {
 	PushPrompt.prototype.wat_combine = function self(m, e, o) {
 		var prompt = elt(o, 0)
 		var x = elt(o, 1)
-		if (!isResumption(m))
-			var res = evaluate(null, e, x)
-		else
-			var res = resumeFrame(m)
+		var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, x)	
 		if (!isSuspension(res)) return res
-		if (res.prompt !== prompt) {
-			suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
-			return res
-		}
+		if (res.prompt !== prompt) return suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
 		var continuation = res.k
 		var handler = res.handler
 		return combine(null, e, handler, cons(continuation, NIL))
@@ -203,8 +200,7 @@ module.exports = function Qua() {
 		var prompt = elt(o, 0)
 		var handler = elt(o, 1)
 		var cap = new Suspension(prompt, handler)
-		suspendFrame(cap, function(m) { return combine(null, e, m.f, NIL) }, this, e)
-		return cap
+		return suspendFrame(cap, function(m) { return combine(null, e, m.f, NIL) }, this, e)
 	}
 	PushSubcont.prototype.wat_combine = function self(m, e, o) {
 		var thek = elt(o, 0)
@@ -219,10 +215,7 @@ module.exports = function Qua() {
 		var thef = elt(o, 2)
 		var res = isResumption(m) ? resumeFrame(m) : resumeFrame(new Resumption(thek, thef))
 		if (!isSuspension(res)) return res
-		if (res.prompt !== prompt) {
-			suspendFrame(res, function(m) { return self(m, e, o) }, thef, e)
-			return res
-		}
+		if (res.prompt !== prompt) return suspendFrame(res, function(m) { return self(m, e, o) }, thef, e)
 		var continuation = res.k
 		var handler = res.handler
 		return combine(null, e, handler, cons(continuation, NIL))
@@ -258,7 +251,7 @@ module.exports = function Qua() {
 	function cdr(cons) { // tc
 		return cons instanceof Cons ? cons.cdr : error("not a cons: " + to_string(cons))
 	}
-	function elt(cons, i) { return (i === 0) ? car(cons) : elt(cdr(cons), i - 1) }
+	function elt(cons, i) { return i === 0 ? car(cons) : elt(cdr(cons), i - 1) }
 	function sym_name(sym) { return sym.name }
 	
 	/* Environment */
@@ -424,11 +417,12 @@ module.exports = function Qua() {
 	Nil.prototype.toString = function() { return "()" }
 	Ign.prototype.toString = function() { return "#ignore" }
 	Sym.prototype.toString = function() { return this.name }
-	Cons.prototype.toString = function() { return "(" + cons_to_string(this) + ")" }
-	function cons_to_string(c) {
-		if (cdr(c) === NIL) return to_string(car(c))
-		if (cdr(c) instanceof Cons) return to_string(car(c)) + " " + cons_to_string(cdr(c))
-		return to_string(car(c)) + " . " + to_string(cdr(c))
+	Cons.prototype.toString = function() { return "(" + cons_to_string(this) + ")"
+		function cons_to_string(c) {
+			if (cdr(c) === NIL) return to_string(car(c))
+			if (cdr(c) instanceof Cons) return to_string(car(c)) + " " + cons_to_string(cdr(c))
+			return to_string(car(c)) + " . " + to_string(cdr(c))
+		}
 	}
 	Apv.prototype.toString = function() { return "[Apv " + to_string(this.cmb) + "]" }
 	Opv.prototype.toString = function() { return "[Opv " + to_string(this.p) + " " + to_string(this.ep) + " " + to_string(this.x) + "]" }
