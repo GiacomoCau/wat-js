@@ -85,7 +85,7 @@ module.exports = function Qua() {
 		}
 	}
 	// TODO capire perché JSFun non ha wat_combine che dovrebbe avere
-	function wrap(cmb) { return cmb && (cmb.wat_combine || cmb instanceof JSFun) ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
+	function wrap(cmb) { return cmb && cmb.wat_combine ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
 	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
 	
 	/* Built-in Combiners */
@@ -269,18 +269,14 @@ module.exports = function Qua() {
 		var that = this
 		return monadic(
 			null,
-			function() { return car(that).wat_match(e, car(rhs)) },
-			function() { return cdr(that).wat_match(e, cdr(rhs)) }
+			function() { return that.car.wat_match(e, car(rhs)) },
+			function() { return that.cdr.wat_match(e, cdr(rhs)) }
 		)
 	}
 	Nil.prototype.wat_match = function(e, rhs) {
 		if (rhs !== NIL) return error("NIL expected, but got: " + to_string(rhs))
 	}
 	Ign.prototype.wat_match = function(e, rhs) { }
-	
-	/* Setter - you are not expected to understand this - immediately */
-	var SETTER = jswrap(function setter(obj) { return obj.wat_setter })
-	SETTER.wat_setter = jswrap(function(new_setter, obj) { obj.wat_setter = new_setter })
 	
 	/* Error handling */
 	var ROOT_PROMPT = {}
@@ -407,6 +403,10 @@ module.exports = function Qua() {
 	}
 	var JS_GLOBAL = jswrap(function(name) { return eval(name) })
 	JS_GLOBAL.wat_setter = jswrap(function(new_val, name) { global[name] = new_val })
+	
+	/* Setter - you are not expected to understand this - immediately */
+	var SETTER = jswrap(function setter(obj) { return obj.wat_setter })
+	SETTER.wat_setter = jswrap(function(new_setter, obj) { obj.wat_setter = new_setter })
 	
 	/* Stringification */
 	function to_string(obj) {
