@@ -15,14 +15,18 @@ var x_stx = function(input) { return x_stx(input) } // forward decl.
 var id_special_char = choice("-", "&", "!", "=", ">", "<", "%", "+", "?", "/", "*", "$", "_", "'", ".", "@", "|", "~", "^")
 var id_char = choice(range("a", "z"), range("A", "Z"), range("0", "9"), id_special_char)
 
-// Kludge: don't allow single dot as id, so as not to conflict with dotted pair stx.
-var id_stx = action(join_action(butnot(repeat1(id_char), "."), ""), handle_identifier)
-function handle_identifier(str) {
-	if ((str[0] === ".") && (str.length > 1)) return ["js-getter", ["wat-string", str.substring(1)]]
-	if (str[0] === "@") return ["js-invoker", ["wat-string", str.substring(1)]]
-	if (str[0] === "&") return ["js-global", ["wat-string", str.substring(1)]]
-	return str
-}
+var id_stx = action(
+	join_action(butnot(repeat1(id_char), "."), ""), 
+	function (str) {
+		if (str.length == 1) return str
+		switch (str[0]) {
+			case ".": return ["js-getter", ["wat-string", str.substring(1)]]
+			case "@": return ["js-invoker", ["wat-string", str.substring(1)]]
+			case "&": return ["js-global", ["wat-string", str.substring(1)]]
+		}
+		return str
+	}
+)
 var escape_char = choice("\"", "\\", "n", "r", "t", "0")
 var escape_sequence = action(
 	sequence("\\", escape_char),
@@ -67,9 +71,7 @@ var dot_stx = action(wsequence(".", x_stx), function(ast) { return ast[1] });
 var compound_stx = action(
 	wsequence( "(", repeat1(x_stx), optional(dot_stx), ")" ),
 	function(ast) {
-		var exprs = ast[1]
-		var end = ast[2] ? [".", ast[2]] : []
-		return exprs.concat(end)
+		return !ast[2] ? ast[1] : ast[1].concat( [".", ast[2]] );
 	}
 );
 var quote_stx = action(sequence("'", x_stx), function(ast) { return ["quote", ast[1]] })
