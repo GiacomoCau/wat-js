@@ -1,20 +1,6 @@
 module.exports = {
-	ps: ps,
-	choice: choice,
-	range: range,
-	action: action,
-	sequence: sequence,
-	join_action: join_action,
-	negate: negate,
-	repeat0: repeat0,
-	optional: optional,
-	repeat1: repeat1,
-	wsequence: wsequence,
-	whitespace: whitespace,
-	ch: ch,
-	butnot: butnot,
-	expect: expect,
-} /* browserify adaptation for wat, rest of code below unchanged */
+	ps, choice, range, action, sequence, join_action, negate, repeat0, optional, repeat1, wsequence, whitespace, ch, butnot, expect,
+} /* browserify adaptation for wat */
 
 // Copyright (C) 2007 Chris Double.
 //
@@ -166,7 +152,7 @@ function range(lower, upper) {
 // Helper function to convert string literals to token parsers
 // and perform other implicit parser conversions.
 function toParser(p) {
-	return (typeof(p) == "string") ? token(p) : p
+	return typeof(p) == "string" ? token(p) : p
 }
 
 // Parser combinator that returns a parser that
