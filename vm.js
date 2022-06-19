@@ -25,6 +25,10 @@ module.exports = function Qua() {
 		return suspendFrame(res, function(m) { return monadic(m, a, b) })
 	}
 	
+	/* Forms */
+	function Nil() { }; var NIL = new Nil()
+	function Ign() { }; var IGN = new Ign()
+	
 	/* Evaluation Core */
 	function evaluate(m, e, x) {
 		 if (!x || !x.wat_eval) return x
@@ -33,6 +37,8 @@ module.exports = function Qua() {
 	function Sym(name) { this.name = name }
 	function sym(name) { return new Sym(name) }
 	Sym.prototype.wat_eval = function(m, e) { return lookup(e, this.name) }
+	function sym_name(sym) { return sym.name }
+
 	function Cons(car, cdr) { this.car = car; this.cdr = cdr }
 	Cons.prototype.wat_eval = function(m, e) {
 		var that = this
@@ -42,6 +48,14 @@ module.exports = function Qua() {
 			function(op) { return combine(null, e, op, cdr(that)) }
 		)
 	}
+	function cons(car, cdr) { return new Cons(car, cdr) }
+	function car(cons) { // tc
+		return cons instanceof Cons ? cons.car : error("not a cons: " + to_string(cons))
+	}
+	function cdr(cons) { // tc
+		return cons instanceof Cons ? cons.cdr : error("not a cons: " + to_string(cons))
+	}
+	function elt(cons, i) { return i === 0 ? car(cons) : elt(cdr(cons), i - 1) }
 	
 	/* Operative & Applicative Combiners */
 	function combine(m, e, cmb, o) {
@@ -84,7 +98,6 @@ module.exports = function Qua() {
 			)
 		}
 	}
-	// TODO capire perché JSFun non ha wat_combine che dovrebbe avere
 	function wrap(cmb) { return cmb && cmb.wat_combine ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
 	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
 	
@@ -94,7 +107,10 @@ module.exports = function Qua() {
 		// o = (ptree envp expr)
 		var ptree = elt(o, 0)
 		var err = pcheck(ptree); if (err) return err
-		return new Opv(ptree, elt(o, 1), elt(o, 2), e)
+		// envp deve essere un symbol non in ptree
+		var envp = elt(o, 1)
+		var err = pcheck(ptree, envp); if (err) return err
+		return new Opv(ptree, envp, elt(o, 2), e)
 	}
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
 		var lhs = elt(o, 0);
@@ -106,13 +122,17 @@ module.exports = function Qua() {
 			function(val) { return bind(e, lhs, val) }
 		)
 	}
-	function pcheck(p) {
+	function pcheck(p, ep) {
+		if (ep && ep != IGN && !(ep instanceof Sym)) return error("envp not #ignore or symbol: " + ep);
 		return pcheck(p)
 		function pcheck(x) {
-			if (x === NIL || x == IGN || x instanceof Sym) return
+			if (x === NIL || x == IGN) return
+			if (x instanceof Sym) {
+				if (ep && ep instanceof Sym && ep.name === x.name) error("envp not a unique symbol: " + ep)
+				return 
+			}
 			if (x instanceof Cons) {
-				 var err = pcheck(car(x))
-				 if (err) return err
+				 var err = pcheck(car(x)); if (err) return err
 				 return pcheck(cdr(x))
 			}
 			return error("not a symbol: " + to_string(x) + " in: " + p)
@@ -241,19 +261,6 @@ module.exports = function Qua() {
 		}
 	}
 	
-	/* Forms */
-	function Nil() { }; var NIL = new Nil()
-	function Ign() { }; var IGN = new Ign()
-	function cons(car, cdr) { return new Cons(car, cdr) }
-	function car(cons) { // tc
-		return cons instanceof Cons ? cons.car : error("not a cons: " + to_string(cons))
-	}
-	function cdr(cons) { // tc
-		return cons instanceof Cons ? cons.cdr : error("not a cons: " + to_string(cons))
-	}
-	function elt(cons, i) { return i === 0 ? car(cons) : elt(cdr(cons), i - 1) }
-	function sym_name(sym) { return sym.name }
-	
 	/* Environment */
 	function Env(parent) { this.bindings = Object.create(!parent ? null : parent.bindings); this.parent = parent }
 	function env(parent) { return new Env(parent) }
@@ -284,8 +291,7 @@ module.exports = function Qua() {
 	function error(err) {
 		//console.log(err)
 		var user_break = the_environment.bindings["user-break"]
-		if (user_break === undefined) 
-			throw err
+		if (user_break === undefined) throw err
 		return combine(null, the_environment, user_break, list(err))
 	}
 	
@@ -319,7 +325,7 @@ module.exports = function Qua() {
 			default: return obj
 		}
 		function parse_bytecode_array(arr) {
-			if ((arr.length == 2) && arr[0] === "wat-string") return arr[1]
+			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
 			var i = arr.indexOf(".")
 			if (i === -1) return array_to_list(arr.map(parse_bytecode))
 			var front = arr.slice(0, i)
@@ -346,12 +352,11 @@ module.exports = function Qua() {
 	function js_binop(op) { return jswrap(new Function("a", "b", "return (a " + op + " b)")) }
 	function js_invoker(method_name) {
 		return jswrap(
-			function() {
+			function(rcv) {
 				if (arguments.length < 1)
 					return error("invoker called with wrong args: " + arguments)
 				if (!method_name)
 					return error("method name is null/undefined")
-				var rcv = arguments[0]
 				if (!rcv) 
 					return error("receiver is null/undefined")
 				var method = rcv[method_name]
@@ -363,9 +368,8 @@ module.exports = function Qua() {
 	}
 	function js_getter(prop_name) {
 		var getter = jswrap(
-			function() {
+			function(rcv) {
 				if (arguments.length !== 1) return error(prop_name + " getter called with wrong args")
-				var rcv = arguments[0]
 				if ((rcv !== undefined) && (rcv !== null)) return rcv[prop_name]
 				return error("can't get " + prop_name + " of " + rcv)
 			}
@@ -375,10 +379,9 @@ module.exports = function Qua() {
 	}
 	function js_setter(prop_name) {
 		return jswrap(
-			function() {
+			function(val, rcv) {
 				if (arguments.length !== 2) return error("setter called with wrong args: " + arguments)
-				var rcv = arguments[1]
-				if (rcv !== undefined && rcv !== null) return rcv[prop_name] = arguments[0]
+				if (rcv !== undefined && rcv !== null) return rcv[prop_name] = val
 				return error("can't set " + prop_name + " of " + rcv)
 			}
 		)
