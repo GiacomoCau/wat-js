@@ -22,7 +22,7 @@ module.exports = function Qua() {
 			var res = resumeFrame(m)
 		if (!isSuspension(res))
 			return b(res)
-		return suspendFrame(res, function(m) { return monadic(m, a, b) })
+		return suspendFrame(res, m=> monadic(m, a, b))
 	}
 	
 	/* Forms */
@@ -44,8 +44,8 @@ module.exports = function Qua() {
 		var that = this
 		return monadic(
 			null,
-			function() { return evaluate(null, e, car(that)) },
-			function(op) { return combine(null, e, op, cdr(that)) }
+			() => evaluate(null, e, car(that)),
+			op => combine(null, e, op, cdr(that))
 		)
 	}
 	function cons(car, cdr) { return new Cons(car, cdr) }
@@ -59,11 +59,9 @@ module.exports = function Qua() {
 	
 	/* Operative & Applicative Combiners */
 	function combine(m, e, cmb, o) {
-		if (cmb && cmb.wat_combine)
-			return cmb.wat_combine(m, e, o)
-		if (cmb instanceof Function)
-			return jswrap(cmb).wat_combine(m, e, o)
-		return error("not a combiner: " + to_string(cmb))
+		if (cmb && cmb.wat_combine)	return cmb.wat_combine(m, e, o)
+		if (cmb instanceof Function) return jswrap(cmb).wat_combine(m, e, o)
+		return error("not a combiner: " + to_string(cmb) + " in: " + o)
 	}
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
 	Opv.prototype.wat_combine = function(m, e, o) {
@@ -71,14 +69,12 @@ module.exports = function Qua() {
 		var xe = env(that.e)
 		return monadic(
 			null,
-			function() { return bind(xe, that.p, o) },
-			function() {
-				return monadic(
-					null,
-					function() { return bind(xe, that.ep, e) },
-					function() { return evaluate(null, xe, that.x) }
-				)
-			}
+			()=> bind(xe, that.p, o),
+			__=> monadic(
+				null,
+				() => bind(xe, that.ep, e),
+				__ => evaluate(null, xe, that.x)
+			)
 		)
 	}
 	function Apv(cmb) { this.cmb = cmb }
@@ -86,15 +82,15 @@ module.exports = function Qua() {
 		var that = this
 		return monadic(
 			null,
-			function() { return evalArgs(null, e, o, NIL) },
-			function(args) { return that.cmb.wat_combine(null, e, args) }
+			()=> evalArgs(null, e, o, NIL),
+			args=> that.cmb.wat_combine(null, e, args)
 		)
 		function evalArgs(m, e, todo, done) {
 			if (todo === NIL) return reverse_list(done) 
 			return monadic(
 				null,
-				function() { return evaluate(null, e, car(todo)) },
-				function(arg) { return evalArgs(null, e, cdr(todo), cons(arg, done)) }
+				()=> evaluate(null, e, car(todo)),
+				arg=> evalArgs(null, e, cdr(todo), cons(arg, done))
 			)
 		}
 	}
@@ -118,17 +114,17 @@ module.exports = function Qua() {
 		var rhs = elt(o, 1)
 		return monadic(
 			null,
-			function() { return evaluate(null, e, rhs) },
-			function(val) { return bind(e, lhs, val) }
+			()=> evaluate(null, e, rhs),
+			val=> bind(e, lhs, val)
 		)
 	}
 	function pcheck(p, ep) {
-		if (ep && ep != IGN && !(ep instanceof Sym)) return error("envp not #ignore or symbol: " + ep);
+		if (ep && ep != IGN && !(ep instanceof Sym)) return error("not #ignore or a symbol: " + ep);
 		return pcheck(p)
 		function pcheck(x) {
 			if (x === NIL || x == IGN) return
 			if (x instanceof Sym) {
-				if (ep && ep instanceof Sym && ep.name === x.name) error("envp not a unique symbol: " + ep)
+				if (ep && ep instanceof Sym && ep.name === x.name) error("not a unique symbol: " + ep)
 				return 
 			}
 			if (x instanceof Cons) {
@@ -151,8 +147,8 @@ module.exports = function Qua() {
 		function begin(m, e, xs) {
 			return monadic(
 				null,
-				function() { return evaluate(null, e, car(xs)) },
-				function(res) {
+				()=> evaluate(null, e, car(xs)),
+				res=> {
 					var kdr = cdr(xs)
 					return kdr === NIL ? res : begin(null, e, kdr)
 				}
@@ -162,8 +158,8 @@ module.exports = function Qua() {
 	If.prototype.wat_combine = function(m, e, o) {
 		return monadic(
 			null,
-			function() { return evaluate(null, e, elt(o, 0)) },
-			function(test) { return evaluate(null, e, test ? elt(o, 1) : elt(o, 2)) }
+			()=> evaluate(null, e, elt(o, 0)),
+			test=> evaluate(null, e, test ? elt(o, 1) : elt(o, 2))
 		)
 	}
 	Loop.prototype.wat_combine = function self(m, e, o) {
@@ -171,7 +167,7 @@ module.exports = function Qua() {
 		while (true) {
 			var res = first && isResumption(m) ? resumeFrame(m) : evaluate(null, e, elt(o, 0))
 			first = false
-			if (isSuspension(res)) return suspendFrame(res, function(m) { return self(m, e, o) }, elt(o, 0), e)
+			if (isSuspension(res)) return suspendFrame(res, m=> self(m, e, o), elt(o, 0), e)
 		}
 	}
 	Catch.prototype.wat_combine = function self(m, e, o) {
@@ -184,7 +180,7 @@ module.exports = function Qua() {
 			// unwrap handler to prevent eval if exc is sym or cons
 			var res = combine(null, e, unwrap(handler), list(exc))
 		}
-		if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
+		if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), x, e)
 		return res
 	}
 	Finally.prototype.wat_combine = function self(m, e, o) {
@@ -192,14 +188,14 @@ module.exports = function Qua() {
 		var cleanup = elt(o, 1)
 		try {
 			var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, prot)
-			if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, prot, e)
+			if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), prot, e)
 		}
 		finally {
 			return isSuspension(res) ? res : doCleanup(null, e, cleanup, res)
 		}
 		function doCleanup(m, e, cleanup, res) {
 			var fres = isResumption(m) ? resumeFrame(m) : evaluate(null, e, cleanup)
-			if (isSuspension(fres)) suspendFrame(fres, function(m) { return doCleanup(m, e, cleanup, res) }, cleanup, e)
+			if (isSuspension(fres)) suspendFrame(fres, m=> doCleanup(m, e, cleanup, res), cleanup, e)
 			return fres
 		}
 	}
@@ -211,7 +207,7 @@ module.exports = function Qua() {
 		var x = elt(o, 1)
 		var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, x)	
 		if (!isSuspension(res)) return res
-		if (res.prompt !== prompt) return suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
+		if (res.prompt !== prompt) return suspendFrame(res, m=> self(m, e, o), x, e)
 		var continuation = res.k
 		var handler = res.handler
 		return combine(null, e, handler, cons(continuation, NIL))
@@ -220,13 +216,13 @@ module.exports = function Qua() {
 		var prompt = elt(o, 0)
 		var handler = elt(o, 1)
 		var cap = new Suspension(prompt, handler)
-		return suspendFrame(cap, function(m) { return combine(null, e, m.f, NIL) }, this, e)
+		return suspendFrame(cap, m=> combine(null, e, m.f, NIL), this, e)
 	}
 	PushSubcont.prototype.wat_combine = function self(m, e, o) {
 		var thek = elt(o, 0)
 		var thef = elt(o, 1)
 		var res = isResumption(m) ? resumeFrame(m) : resumeFrame(new Resumption(thek, thef))
-		if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, thef, e)
+		if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), thef, e)
 		return res
 	}
 	PushPromptSubcont.prototype.wat_combine = function self(m, e, o) {
@@ -235,7 +231,7 @@ module.exports = function Qua() {
 		var thef = elt(o, 2)
 		var res = isResumption(m) ? resumeFrame(m) : resumeFrame(new Resumption(thek, thef))
 		if (!isSuspension(res)) return res
-		if (res.prompt !== prompt) return suspendFrame(res, function(m) { return self(m, e, o) }, thef, e)
+		if (res.prompt !== prompt) return suspendFrame(res, m=> self(m, e, o), thef, e)
 		var continuation = res.k
 		var handler = res.handler
 		return combine(null, e, handler, cons(continuation, NIL))
@@ -253,7 +249,7 @@ module.exports = function Qua() {
 		try {
 			dv.val = val
 			var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, x)
-			if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
+			if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), x, e)
 			return res
 		}
 		finally {
@@ -267,17 +263,18 @@ module.exports = function Qua() {
 	function lookup(e, name) { return name in e.bindings ? e.bindings[name] : error("unbound: " + name) }
 	
 	function bind(e, lhs, rhs) {
-		if (lhs.wat_match)
-			return lhs.wat_match(e, rhs)
+		if (lhs.wat_match) return lhs.wat_match(e, rhs)
 		return error("cannot match against: " + lhs)
 	}
 	Sym.prototype.wat_match = function(e, rhs) { return e.bindings[this.name] = rhs }
 	Cons.prototype.wat_match = function(e, rhs) {
 		var that = this
+		if (!this.car.wat_match) return error("cannot match against: " + this.car + " in: " + this)
+		if (!this.cdr.wat_match) return error("cannot match against: " + this.cdr + " in: " + this) 
 		return monadic(
 			null,
-			function() { return that.car.wat_match(e, car(rhs)) },
-			function() { return that.cdr.wat_match(e, cdr(rhs)) }
+			()=> that.car.wat_match(e, car(rhs)),
+			__=> that.cdr.wat_match(e, cdr(rhs))
 		)
 	}
 	Nil.prototype.wat_match = function(e, rhs) {
@@ -297,17 +294,15 @@ module.exports = function Qua() {
 	
 	/* Utilities */
 	function list() {
-		return array_to_list(Array.prototype.slice.call(arguments))
+		return array_to_list(true, arguments)
 	}
 	function list_star() {
-		var len = arguments.length
-		var c = len >= 1 ? arguments[len - 1] : NIL
-		for (var i = len - 1; i > 0; i--) c = cons(arguments[i - 1], c)
-		return c
+		return array_to_list(false, arguments)
 	}
-	function array_to_list(array, end) {
-		var c = end ? end : NIL
-		for (var i = array.length; i > 0; i--) c = cons(array[i - 1], c)
+	function array_to_list(b, args) {
+		var len = args.length-1
+		var c = b || len < 0 ? NIL : args[len]
+		for (var i=len-(b?0:1); i>=0; i-=1) c = cons(args[i], c)
 		return c
 	}
 	function list_to_array(c) {
@@ -324,6 +319,7 @@ module.exports = function Qua() {
 			case "[object Array]": return parse_bytecode_array(obj)
 			default: return obj
 		}
+		/* TODO sostituito dal seguente
 		function parse_bytecode_array(arr) {
 			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
 			var i = arr.indexOf(".")
@@ -331,15 +327,41 @@ module.exports = function Qua() {
 			var front = arr.slice(0, i)
 			return array_to_list(front.map(parse_bytecode), parse_bytecode(arr[i + 1]))
 		}
+		*/
+		/*
+		function parse_bytecode_array(arr) {
+			if (arr.length == 0) return NIL
+			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
+			var head = cons(parse_bytecode(arr[0]), NIL), c = head
+			for (var i=1; i<arr.length; i+=1) {
+				if (arr[i] === ".") {
+					if (i != arr.length-2) throw error(". not is the penultimate element in " + arr)
+					c.cdr = parse_bytecode(arr[i+1])
+					return head
+				}
+				c = c.cdr = cons(parse_bytecode(arr[i]), NIL)
+			}
+			return head
+		}
+		//*/
+		function parse_bytecode_array(arr) {
+			if (arr.length == 0) return NIL
+			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
+			var head = cons(parse_bytecode(arr[0]), NIL), c = head
+			for (var i=1; i<arr.length; i+=1) {
+				if (arr[i] !== ".") {
+					c = c.cdr = cons(parse_bytecode(arr[i]), NIL)
+					continue
+				}
+				if (i != arr.length-2) throw error(". not is the penultimate element in " + arr)
+				c.cdr = parse_bytecode(arr[i+1])
+				return head
+			}
+			return head
+		}
 	}
 	
 	/* JSNI */
-	var js_types = ["Array", "Boolean", "Date", "Function", "Number", "Object", "RegExp", "String"]
-	function is_type(obj, type_obj, type_name) {
-		if (!type_obj) return error("type is undefined")
-		if (js_types.indexOf(type_name) === -1) return obj instanceof type_obj
-		return toString.call(obj) === "[object " + type_name + "]"
-	}
 	function JSFun(jsfun) {
 		if (Object.prototype.toString.call(jsfun) !== "[object Function]") return error("no fun")
 		this.jsfun = jsfun
@@ -348,6 +370,12 @@ module.exports = function Qua() {
 		return this.jsfun.apply(null, list_to_array(o))
 	}
 	function jswrap(jsfun) { return wrap(new JSFun(jsfun)) }
+	var js_types = ["Array", "Boolean", "Date", "Function", "Number", "Object", "RegExp", "String"]
+	function is_type(obj, type_obj, type_name) {
+		if (!type_obj) return error("type is undefined")
+		if (js_types.indexOf(type_name) === -1) return obj instanceof type_obj
+		return toString.call(obj) === "[object " + type_name + "]"
+	}
 	function js_unop(op) { return jswrap(new Function("a", "return (" + op + " a)")) }
 	function js_binop(op) { return jswrap(new Function("a", "b", "return (a " + op + " b)")) }
 	function js_invoker(method_name) {
@@ -404,12 +432,12 @@ module.exports = function Qua() {
 			return combine(null, null, cmb, args)
 		}
 	}
-	var JS_GLOBAL = jswrap(function(name) { return eval(name) })
-	JS_GLOBAL.wat_setter = jswrap(function(new_val, name) { global[name] = new_val })
+	var JS_GLOBAL = jswrap(name=> global[name])
+	JS_GLOBAL.wat_setter = jswrap((new_val, name)=> global[name] = new_val)
 	
 	/* Setter - you are not expected to understand this - immediately */
-	var SETTER = jswrap(function setter(obj) { return obj.wat_setter })
-	SETTER.wat_setter = jswrap(function(new_setter, obj) { obj.wat_setter = new_setter })
+	var SETTER = jswrap(obj=> obj.wat_setter)
+	SETTER.wat_setter = jswrap((new_setter, obj)=> obj.wat_setter = new_setter)
 	
 	/* Stringification */
 	function to_string(obj) {
@@ -447,23 +475,21 @@ module.exports = function Qua() {
 	JSFun.prototype.toString = function() { return "[JSFun " + this.jsfun.toString() + "]" }
 	
 	/* Bootstrap */
-	var the_environment = env()
-	bind(the_environment, sym("vm-def"), new Def())
-	bind(the_environment, sym("vm-begin"), new Begin())
+	
 	var builtin_bytecode =
 		["vm-begin",
 			// Basics
 			["vm-def", "vm-vau", new Vau()],
 			["vm-def", "vm-eval", wrap(new Eval())],
-			["vm-def", "vm-make-environment", jswrap(function(parent) { return env(parent) })],
+			["vm-def", "vm-make-environment", jswrap(parent=> env(parent))],
 			["vm-def", "vm-wrap", jswrap(wrap)],
 			["vm-def", "vm-unwrap", jswrap(unwrap)],
 			// Values
 			["vm-def", "vm-cons", jswrap(cons)],
-			["vm-def", "vm-cons?", jswrap(function(obj) { return obj instanceof Cons })],
-			["vm-def", "vm-nil?", jswrap(function(obj) { return obj === NIL })],
+			["vm-def", "vm-cons?", jswrap(obj=> obj instanceof Cons)],
+			["vm-def", "vm-nil?", jswrap(obj=> obj === NIL)],
 			["vm-def", "vm-string-to-symbol", jswrap(sym)],
-			["vm-def", "vm-symbol?", jswrap(function(obj) { return obj instanceof Sym })],
+			["vm-def", "vm-symbol?", jswrap(obj=> obj instanceof Sym)],
 			["vm-def", "vm-symbol-name", jswrap(sym_name)],
 			// First-order Control
 			["vm-def", "vm-if", new If()],
@@ -499,24 +525,28 @@ module.exports = function Qua() {
 			["vm-def", "vm-js-new", jswrap(jsnew)],
 			["vm-def", "vm-type?", jswrap(is_type)],
 			// Utilities
+			["vm-def", "vm-list", jswrap(list)],
+			["vm-def", "vm-list*", jswrap(list_star)],
 			["vm-def", "vm-list-to-array", jswrap(list_to_array)],
 			["vm-def", "vm-array-to-list", jswrap(array_to_list)],
 			["vm-def", "vm-reverse-list", jswrap(reverse_list)],
-			["vm-def", "vm-list*", jswrap(list_star)]
 		]
+	var the_environment = env()
+	bind(the_environment, sym("vm-def"), new Def())
+	bind(the_environment, sym("vm-begin"), new Begin())
 	evaluate(null, the_environment, parse_bytecode(builtin_bytecode))
 	
 	/* API */
 	this.exec = function(bytecode) {
-		var wrapped = push_root_prompt(parse_bytecode([new Begin()].concat(bytecode)))
+		var wrapped = push_root_prompt(cons(new Begin(), parse_bytecode(bytecode)))
 		var res = evaluate(null, the_environment, wrapped)
 		if (isSuspension(res)) throw "prompt not found: " + res.prompt
 		return res
 	}
 	this.call = function(fun_name) {
-		return this.exec(parse_bytecode([fun_name].concat(Array.prototype.slice.call(arguments, 1))))
+		return this.exec(list(sym(fun_name), parse_bytecode(Array.prototype.slice.call(arguments, 1))))
 	}
 	this.get = function(var_name) {
-		return this.exec(parse_bytecode(var_name))
+		return this.exec(sym(var_name))
 	}
 }
