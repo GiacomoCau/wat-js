@@ -41,11 +41,10 @@ module.exports = function Qua() {
 
 	function Cons(car, cdr) { this.car = car; this.cdr = cdr }
 	Cons.prototype.wat_eval = function(m, e) {
-		var that = this
 		return monadic(
 			null,
-			() => evaluate(null, e, car(that)),
-			op => combine(null, e, op, cdr(that))
+			() => evaluate(null, e, car(this)),
+			op => combine(null, e, op, cdr(this))
 		)
 	}
 	function cons(car, cdr) { return new Cons(car, cdr) }
@@ -65,25 +64,23 @@ module.exports = function Qua() {
 	}
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
 	Opv.prototype.wat_combine = function(m, e, o) {
-		var that = this
-		var xe = env(that.e)
+		var xe = env(this.e)
 		return monadic(
 			null,
-			()=> bind(xe, that.p, o),
+			()=> bind(xe, this.p, o),
 			__=> monadic(
 				null,
-				() => bind(xe, that.ep, e),
-				__ => evaluate(null, xe, that.x)
+				()=> bind(xe, this.ep, e),
+				__ => evaluate(null, xe, this.x)
 			)
 		)
 	}
 	function Apv(cmb) { this.cmb = cmb }
 	Apv.prototype.wat_combine = function(m, e, o) {
-		var that = this
 		return monadic(
 			null,
 			()=> evalArgs(null, e, o, NIL),
-			args=> that.cmb.wat_combine(null, e, args)
+			args=> this.cmb.wat_combine(null, e, args)
 		)
 		function evalArgs(m, e, todo, done) {
 			if (todo === NIL) return reverse_list(done) 
@@ -268,13 +265,12 @@ module.exports = function Qua() {
 	}
 	Sym.prototype.wat_match = function(e, rhs) { return e.bindings[this.name] = rhs }
 	Cons.prototype.wat_match = function(e, rhs) {
-		var that = this
 		if (!this.car.wat_match) return error("cannot match against: " + this.car + " in: " + this)
 		if (!this.cdr.wat_match) return error("cannot match against: " + this.cdr + " in: " + this) 
 		return monadic(
 			null,
-			()=> that.car.wat_match(e, car(rhs)),
-			__=> that.cdr.wat_match(e, cdr(rhs))
+			()=> this.car.wat_match(e, car(rhs)),
+			__=> this.cdr.wat_match(e, cdr(rhs))
 		)
 	}
 	Nil.prototype.wat_match = function(e, rhs) {
@@ -319,31 +315,6 @@ module.exports = function Qua() {
 			case "[object Array]": return parse_bytecode_array(obj)
 			default: return obj
 		}
-		/* TODO sostituito dal seguente
-		function parse_bytecode_array(arr) {
-			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
-			var i = arr.indexOf(".")
-			if (i === -1) return array_to_list(arr.map(parse_bytecode))
-			var front = arr.slice(0, i)
-			return array_to_list(front.map(parse_bytecode), parse_bytecode(arr[i + 1]))
-		}
-		*/
-		/*
-		function parse_bytecode_array(arr) {
-			if (arr.length == 0) return NIL
-			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
-			var head = cons(parse_bytecode(arr[0]), NIL), c = head
-			for (var i=1; i<arr.length; i+=1) {
-				if (arr[i] === ".") {
-					if (i != arr.length-2) throw error(". not is the penultimate element in " + arr)
-					c.cdr = parse_bytecode(arr[i+1])
-					return head
-				}
-				c = c.cdr = cons(parse_bytecode(arr[i]), NIL)
-			}
-			return head
-		}
-		//*/
 		function parse_bytecode_array(arr) {
 			if (arr.length == 0) return NIL
 			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
@@ -417,9 +388,7 @@ module.exports = function Qua() {
 	function make_prototype(name) {
 		var prop_names = Array.prototype.slice.call(arguments, 1)
 		var param_names = prop_names.join(",")
-		var param_inits = prop_names.map(
-				function(prop_name) { return "this." + prop_name + "=" + prop_name + ";" }
-			).join("")
+		var param_inits = prop_names.map(prop_name=> "this." + prop_name + "=" + prop_name + ";").join("")
 		return eval("(function " + name + "(" + param_names + "){" + param_inits + "})")
 	}
 	function jsnew(ctor) {
