@@ -82,14 +82,14 @@ module.exports = function Qua() {
 			()=> evalArgs(null, e, o, NIL),
 			args=> this.cmb.wat_combine(null, e, args)
 		)
-		function evalArgs(m, e, todo, done) {
-			if (todo === NIL) return reverse_list(done) 
-			return monadic(
-				null,
-				()=> evaluate(null, e, car(todo)),
-				arg=> evalArgs(null, e, cdr(todo), cons(arg, done))
-			)
-		}
+	}
+	function evalArgs(m, e, todo, done) {
+		if (todo === NIL) return reverse_list(done) 
+		return monadic(
+			null,
+			()=> evaluate(null, e, car(todo)),
+			arg=> evalArgs(null, e, cdr(todo), cons(arg, done))
+		)
 	}
 	function wrap(cmb) { return cmb && cmb.wat_combine ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
 	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
@@ -99,15 +99,13 @@ module.exports = function Qua() {
 	Vau.prototype.wat_combine = function(m, e, o) {
 		// o = (ptree envp expr)
 		var ptree = elt(o, 0)
-		var err = pcheck(ptree); if (err) return err
-		// envp deve essere un symbol non in ptree
 		var envp = elt(o, 1)
-		var err = pcheck(ptree, envp); if (err) return err
+		var msg = pcheck(ptree, envp); if (msg) return error(msg + " in " + cons(this, o))
 		return new Opv(ptree, envp, elt(o, 2), e)
 	}
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
 		var lhs = elt(o, 0);
-		var err = pcheck(lhs); if (err) return err
+		var msg = pcheck(lhs); if (msg) return error(msg + " in " + cons(this, o))
 		var rhs = elt(o, 1)
 		return monadic(
 			null,
@@ -115,20 +113,17 @@ module.exports = function Qua() {
 			val=> bind(e, lhs, val)
 		)
 	}
-	function pcheck(p, ep) {
-		if (ep && ep != IGN && !(ep instanceof Sym)) return error("not #ignore or a symbol: " + ep);
-		return pcheck(p)
-		function pcheck(x) {
-			if (x === NIL || x == IGN) return
-			if (x instanceof Sym) {
-				if (ep && ep instanceof Sym && ep.name === x.name) error("not a unique symbol: " + ep)
-				return 
-			}
-			if (x instanceof Cons) {
-				 var err = pcheck(car(x)); if (err) return err
-				 return pcheck(cdr(x))
-			}
-			return error("not a symbol: " + to_string(x) + " in: " + p)
+	function pcheck(ptree, envp) {
+		var symbols = {}
+		if (envp !== undefined && envp != IGN && !(envp instanceof Sym)) return "not #ignore or a symbol: " + envp
+		var msg = pcheck(ptree); if (msg != null) return msg
+		return envp === undefined || envp == IGN || !(envp in symbols) ? null : "not a unique symbol: " + envp
+		return pcheck(ptree)
+		function pcheck(ptree) {
+			if (ptree == NIL || ptree == IGN) return null
+			if (ptree instanceof Sym) { return !(ptree in symbols) ? (symbols[ptree]=true, null) : "not a unique symbol: " + ptree }
+			if (ptree instanceof Cons) { var msg = pcheck(car(ptree)); return msg != null ? msg : pcheck(cdr(ptree)) }
+			return "not a symbol: " + ptree
 		}
 	}
 	Eval.prototype.wat_combine = function(m, e, o) { // error handling
