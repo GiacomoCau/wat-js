@@ -409,6 +409,10 @@ module.exports = function Qua() {
 		if (obj !== null && obj !== undefined) return obj.toString()
 		return Object.prototype.toString.call(obj)
 	}
+	function print(o) {
+		console.log(to_string(o))
+		return o
+	}
 	Nil.prototype.toString = function() { return "()" }
 	Ign.prototype.toString = function() { return "#ignore" }
 	Sym.prototype.toString = function() { return this.name }
