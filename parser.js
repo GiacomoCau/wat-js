@@ -20,6 +20,7 @@ var id_stx = action(
 	function (str) {
 		if (str.length == 1) return str
 		switch (str[0]) {
+			//case ".": return str.length == 1 ? str : ["js-getter", ["wat-string", str.substring(1)]]
 			case ".": return ["js-getter", ["wat-string", str.substring(1)]]
 			case "@": return ["js-invoker", ["wat-string", str.substring(1)]]
 			case "&": return ["js-global", ["wat-string", str.substring(1)]]

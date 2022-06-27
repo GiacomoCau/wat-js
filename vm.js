@@ -25,6 +25,7 @@ module.exports = function Qua() {
 		return suspendFrame(res, m=> monadic(m, a, b))
 	}
 	
+	
 	/* Forms */
 	function Nil() { }; var NIL = new Nil()
 	function Ign() { }; var IGN = new Ign()
@@ -54,7 +55,8 @@ module.exports = function Qua() {
 	function cdr(cons) { // tc
 		return cons instanceof Cons ? cons.cdr : error("not a cons: " + to_string(cons))
 	}
-	function elt(cons, i) { return i === 0 ? car(cons) : elt(cdr(cons), i - 1) }
+	function elt(o, i) { for (; i>0; i-=1) o=cdr(o); return car(o); }
+	function len(o) { for (var i=0; o instanceof Cons; o=cdr(o)) i+=1; return i; }
 	
 	/* Operative & Applicative Combiners */
 	function combine(m, e, cmb, o) {
@@ -98,12 +100,14 @@ module.exports = function Qua() {
 	function Vau() { }; function Def() { }; function Eval() { }
 	Vau.prototype.wat_combine = function(m, e, o) {
 		// o = (ptree envp expr)
+		if (len(o) > 3) return error("too many arguments in: " + cons(this, o));
 		var ptree = elt(o, 0)
 		var envp = elt(o, 1)
 		var msg = pcheck(ptree, envp); if (msg) return error(msg + " in " + cons(this, o))
 		return new Opv(ptree, envp, elt(o, 2), e)
 	}
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
+		if (len(o) > 2) return error("too many arguments in: " + cons(this, o));
 		var lhs = elt(o, 0);
 		var msg = pcheck(lhs); if (msg) return error(msg + " in " + cons(this, o))
 		var rhs = elt(o, 1)
@@ -474,8 +478,6 @@ module.exports = function Qua() {
 			["vm-def", "vm-dnew", wrap(new DNew())],
 			["vm-def", "vm-dlet", new DLet()],
 			["vm-def", "vm-dref", wrap(new DRef())],
-			// Setters
-			["vm-def", "vm-setter", SETTER],
 			// Errors
 			["vm-def", "vm-root-prompt", ROOT_PROMPT],
 			["vm-def", "vm-error", jswrap(error)],
@@ -492,6 +494,8 @@ module.exports = function Qua() {
 			["vm-def", "vm-js-make-prototype", jswrap(make_prototype)],
 			["vm-def", "vm-js-new", jswrap(jsnew)],
 			["vm-def", "vm-type?", jswrap(is_type)],
+			// Setters
+			["vm-def", "vm-setter", SETTER],
 			// Utilities
 			["vm-def", "vm-list", jswrap(list)],
 			["vm-def", "vm-list*", jswrap(list_star)],

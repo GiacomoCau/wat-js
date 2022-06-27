@@ -84,6 +84,7 @@
       (abortP p 9)
       (+ v 20) ))
   'must-be-error )
+; give prompt not found: ([object Null])
 
 ;; (test-check 'test3-3-1
 ;;   (let ((p (new-prompt)))
@@ -91,7 +92,7 @@
 ;; 	       (let* ((v1 (push-prompt p (+ (abortP p 5) 6)))
 ;; 		      (v1 (abortP p 7)))
 ;; 		 (+ v1 10)))))
-;;       (prompt-set? p)))
+;;       (prompt-set? p))) ; give unbound: prompt-set?
 ;;   #f)
 
 (test-check 'test4
@@ -117,12 +118,12 @@
 (let ((obj (object ("x" 1))))
   (set (.x obj) 2)
   (assert-equal 2 (.x obj))
-  ;(set (@ obj "x") 3) ; non funzica
+  ;(set (@ obj "x") 3) not a combiner: [object Undefined] in: (3 obj "x")
   (set (.x obj) 3)
   (assert-equal 3 (.x obj)) )
 
 
-;(assert-equal &x #undefined) ; non funzica
+(assert-equal &x #undefined)
 (set &x 2)
 (assert-equal &x 2)
 
