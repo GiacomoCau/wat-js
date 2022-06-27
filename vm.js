@@ -32,8 +32,9 @@ module.exports = function Qua() {
 	
 	/* Evaluation Core */
 	function evaluate(m, e, x) {
-		 if (!x || !x.wat_eval) return x
-		 return x.wat_eval(m, e)
+		//print("eval:", x)
+		if (!x || !x.wat_eval) return x
+		return x.wat_eval(m, e)
 	}
 	function Sym(name) { this.name = name }
 	function sym(name) { return new Sym(name) }
@@ -60,6 +61,7 @@ module.exports = function Qua() {
 	
 	/* Operative & Applicative Combiners */
 	function combine(m, e, cmb, o) {
+		//print("combine:", cons(cmb, o))
 		if (cmb && cmb.wat_combine)	return cmb.wat_combine(m, e, o)
 		if (cmb instanceof Function) return jswrap(cmb).wat_combine(m, e, o)
 		return error("not a combiner: " + to_string(cmb) + " in: " + o)
@@ -100,15 +102,15 @@ module.exports = function Qua() {
 	function Vau() { }; function Def() { }; function Eval() { }
 	Vau.prototype.wat_combine = function(m, e, o) {
 		// o = (ptree envp expr)
-		if (len(o) > 3) return error("too many arguments in: " + cons(this, o));
+		if (len(o) > 3) return error("too many operands in: " + cons(this, o));
 		var ptree = elt(o, 0)
 		var envp = elt(o, 1)
 		var msg = pcheck(ptree, envp); if (msg) return error(msg + " in " + cons(this, o))
 		return new Opv(ptree, envp, elt(o, 2), e)
 	}
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
-		if (len(o) > 2) return error("too many arguments in: " + cons(this, o));
-		var lhs = elt(o, 0);
+		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
+		var lhs = elt(o, 0)
 		var msg = pcheck(lhs); if (msg) return error(msg + " in " + cons(this, o))
 		var rhs = elt(o, 1)
 		return monadic(
@@ -152,6 +154,7 @@ module.exports = function Qua() {
 		}
 	}
 	If.prototype.wat_combine = function(m, e, o) {
+		if (len(o) > 3) return error("too many operands in: " + cons(this, o));
 		return monadic(
 			null,
 			()=> evaluate(null, e, elt(o, 0)),
@@ -306,6 +309,34 @@ module.exports = function Qua() {
 	function reverse_list(list) {
 		for (var res = NIL; list !== NIL; list = cdr(list)) res = cons(car(list), res); return res
 	}
+	function print() {
+		console.log(to_string(... arguments))
+		return arguments[arguments.length - 1]
+	}
+	/*
+	function eq(a, b) {
+		if (!(a instanceof Cons && b instanceof Cons)) return a === b;
+		if (!(eq(a.car, b.car) && eq(a.cdr, b.cdr))) return false;
+		return true;
+	}
+	*/
+	function eq(a, b) {
+		if (a instanceof Cons && b instanceof Cons) return eq(a.car, b.car) && eq(a.cdr, b.cdr)
+		return a === b 
+	}
+	function assert(a, b) {
+		try {
+			var v = evaluate(null, env(the_environment), a)
+			if (arguments.length == 1) 
+				print(a, "should be throw but is", v)
+			else if (!eq(v, b))
+				print(a, "should be", b, "but is", v);
+		}
+		catch (t) {
+			if (arguments.length > 1)
+				print(a, "throw", t);
+		}
+	}
 	
 	/* Bytecode parser */
 	function parse_bytecode(obj) {
@@ -408,14 +439,15 @@ module.exports = function Qua() {
 	SETTER.wat_setter = jswrap((new_setter, obj)=> obj.wat_setter = new_setter)
 	
 	/* Stringification */
-	function to_string(obj) {
-		if (toString.call(obj) === "[object String]") return JSON.stringify(obj)
-		if (obj !== null && obj !== undefined) return obj.toString()
-		return Object.prototype.toString.call(obj)
-	}
-	function print(o) {
-		console.log(to_string(o))
-		return o
+	function to_string() {
+		var s=''; for(let arg of arguments) s+= (s==''?'':' ') + to_string(arg); return s
+		function to_string(obj) {
+			if (toString.call(obj) === "[object String]") return obj //JSON.stringify(obj)
+			if (obj !== null && obj !== undefined) return obj.toString()
+			if (obj !== null) return "#null"
+			if (obj !== undefined) return "#undefined"
+			return Object.prototype.toString.call(obj)
+		}
 	}
 	Nil.prototype.toString = function() { return "()" }
 	Ign.prototype.toString = function() { return "#ignore" }
@@ -502,6 +534,10 @@ module.exports = function Qua() {
 			["vm-def", "vm-list-to-array", jswrap(list_to_array)],
 			["vm-def", "vm-array-to-list", jswrap(array_to_list)],
 			["vm-def", "vm-reverse-list", jswrap(reverse_list)],
+			["vm-def", "==", jswrap((a,b)=> a == b)],
+			["vm-def", "eq", jswrap((a,b)=> eq(a,b))],
+			["vm-def", "to-string", jswrap(to_string)],
+			["vm-def", "assert", jswrap(assert)],
 		]
 	var the_environment = env()
 	bind(the_environment, sym("vm-def"), new Def())
