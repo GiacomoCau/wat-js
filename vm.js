@@ -262,7 +262,7 @@ module.exports = function Qua() {
 	function lookup(e, name) { return name in e.bindings ? e.bindings[name] : error("unbound: " + name) }
 	
 	function bind(e, lhs, rhs) {
-		if (lhs.wat_match) return lhs.wat_match(e, rhs)
+		if (lhs.wat_match) { lhs.wat_match(e, rhs); return IGN }
 		return error("cannot match against: " + lhs)
 	}
 	Sym.prototype.wat_match = function(e, rhs) { return e.bindings[this.name] = rhs }
