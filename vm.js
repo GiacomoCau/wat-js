@@ -30,9 +30,11 @@ module.exports = function Qua() {
 	function Nil() { }; var NIL = new Nil()
 	function Ign() { }; var IGN = new Ign()
 	
+	var trace = false
+	
 	/* Evaluation Core */
 	function evaluate(m, e, x) {
-		//print("eval:", x)
+		if (trace) print("eval:", x)
 		if (!x || !x.wat_eval) return x
 		return x.wat_eval(m, e)
 	}
@@ -61,10 +63,10 @@ module.exports = function Qua() {
 	
 	/* Operative & Applicative Combiners */
 	function combine(m, e, cmb, o) {
-		//print("combine:", cons(cmb, o))
+		if (trace) print("combine:", cons(cmb, o))
 		if (cmb && cmb.wat_combine)	return cmb.wat_combine(m, e, o)
 		if (cmb instanceof Function) return jswrap(cmb).wat_combine(m, e, o)
-		return error("not a combiner: " + to_string(cmb) + " in: " + o)
+		return error("not a combiner: " + to_string(cmb) + " in: " + cons(cmb, o))
 	}
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
 	Opv.prototype.wat_combine = function(m, e, o) {
@@ -259,13 +261,18 @@ module.exports = function Qua() {
 	/* Environment */
 	function Env(parent) { this.bindings = Object.create(!parent ? null : parent.bindings); this.parent = parent }
 	function env(parent) { return new Env(parent) }
-	function lookup(e, name) { return name in e.bindings ? e.bindings[name] : error("unbound: " + name) }
+	//function lookup(e, name) { return name in e.bindings ? e.bindings[name] : error("unbound: " + name) }
+	function lookup(e, name) {
+		if (!(name in e.bindings)) error("unbound: " + name)
+		if (trace) print("lookup:", name)
+		return e.bindings[name]
+	}
 	
 	function bind(e, lhs, rhs) {
 		if (lhs.wat_match) { lhs.wat_match(e, rhs); return IGN }
 		return error("cannot match against: " + lhs)
 	}
-	Sym.prototype.wat_match = function(e, rhs) { return e.bindings[this.name] = rhs }
+	Sym.prototype.wat_match = function(e, rhs) { e.bindings[this.name] = rhs; if (trace) print("bind:", this.name, rhs, e); return IGN }
 	Cons.prototype.wat_match = function(e, rhs) {
 		if (!this.car.wat_match) return error("cannot match against: " + this.car + " in: " + this)
 		if (!this.cdr.wat_match) return error("cannot match against: " + this.cdr + " in: " + this) 
@@ -537,7 +544,7 @@ module.exports = function Qua() {
 			["vm-def", "==", jswrap((a,b)=> a == b)],
 			["vm-def", "eq", jswrap((a,b)=> eq(a,b))],
 			["vm-def", "to-string", jswrap(to_string)],
-			["vm-def", "assert", jswrap(assert)],
+			["vm-def", "assert", new JSFun(assert)],
 		]
 	var the_environment = env()
 	bind(the_environment, sym("vm-def"), new Def())
