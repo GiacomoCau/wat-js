@@ -1,12 +1,38 @@
-- Global handling when running in Node is sort of broken
-
-- $setTimeout is undefined in Node, probably because we get passed the
-  wrong global object by browserify
-
-- comments aren't properly parsed and evaluate to null
-
 - wat:
 (define x 1)
 (define exports (list x))
 (log (eval (list* module (list* list x) exports) (get-current-environment)))
 gives prompt not found
+with fix to print-stackframe now gives unbound: get-current-environment
+and if change to the-environment gives not a symbol: [Apv [Opv elts #ignore elts]] in: ([Apv [Opv elts #ignore elts]] . 1)
+me le seguenti tornano tutte un Env con x=1, forse è ok!
+(log (eval '(module (x) exports) (the-environment)))
+(log (eval (list* module '(x) exports) (the-environment)))
+(log (eval (list* module (list 'x) exports) (the-environment)))
+(log (eval (list* module '(list list x) exports) (get-current-environment)))
+
+(let ((obj (object ("x" 1))))
+  (set (.x obj) 2)
+  (assert-equal 2 (.x obj))
+  (set (@ obj "x") 3) not a combiner: [object Undefined] in: (3 obj "x")
+  (assert-equal 3 (.x obj)) )
+
+'(test-check 'test3-3
+  (let ((p (new-prompt)))
+    (let ((v (push-prompt p (let*
+	    ((v1 (push-prompt p (+ (abortP p 5) 6)))
+		 (v1 (abortP p 7)) )
+		(+ v1 10) ))))
+      (abortP p 9)
+      (+ v 20) ))
+  'must-be-error )
+; give prompt not found: ([object Null])
+
+;; (test-check 'test3-3-1
+;;   (let ((p (new-prompt)))
+;;     (let ((v (push-prompt p
+;; 	       (let* ((v1 (push-prompt p (+ (abortP p 5) 6)))
+;; 		      (v1 (abortP p 7)))
+;; 		 (+ v1 10)))))
+;;       (prompt-set? p))) ; give unbound: prompt-set?
+;;   #f)
