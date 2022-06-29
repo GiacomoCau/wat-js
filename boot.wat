@@ -424,7 +424,7 @@
     (log (+ "time " expr ": " (- (@getTime (new Date)) n) "ms"))
     result ))
 
-(define-operative (assert expr) env
+(define-operative (assert-true expr) env
   (unless (=== #t (eval expr env))
     (error (+ "Should be true: " expr)) ))
 

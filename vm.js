@@ -65,7 +65,11 @@ module.exports = function Qua() {
 	function combine(m, e, cmb, o) {
 		if (trace) print("combine:", cons(cmb, o))
 		if (cmb && cmb.wat_combine)	return cmb.wat_combine(m, e, o)
-		if (cmb instanceof Function) return jswrap(cmb).wat_combine(m, e, o)
+		// TODO per default le Function non wrapped dovrebbero essere operative e non applicative
+		if (cmb instanceof Function) return jswrap(cmb).wat_combine(m, e, o) // Function x default applicative
+								//	 return Apv.prototype.wat_combine.call(new JSFun(cmb), m, e, o) 
+								//   return new JSFun(cmb).wat_combine(m, e, o) // Function x default operative
+								//   return cmb.apply(null, list_to_array(o))
 		return error("not a combiner: " + to_string(cmb) + " in: " + cons(cmb, o))
 	}
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
@@ -261,7 +265,6 @@ module.exports = function Qua() {
 	/* Environment */
 	function Env(parent) { this.bindings = Object.create(!parent ? null : parent.bindings); this.parent = parent }
 	function env(parent) { return new Env(parent) }
-	//function lookup(e, name) { return name in e.bindings ? e.bindings[name] : error("unbound: " + name) }
 	function lookup(e, name) {
 		if (!(name in e.bindings)) error("unbound: " + name)
 		if (trace) print("lookup:", name)
@@ -320,13 +323,6 @@ module.exports = function Qua() {
 		console.log(to_string(... arguments))
 		return arguments[arguments.length - 1]
 	}
-	/*
-	function eq(a, b) {
-		if (!(a instanceof Cons && b instanceof Cons)) return a === b;
-		if (!(eq(a.car, b.car) && eq(a.cdr, b.cdr))) return false;
-		return true;
-	}
-	*/
 	function eq(a, b) {
 		if (a instanceof Cons && b instanceof Cons) return eq(a.car, b.car) && eq(a.cdr, b.cdr)
 		return a === b 
@@ -370,14 +366,10 @@ module.exports = function Qua() {
 	}
 	
 	/* JSNI */
-	function JSFun(jsfun) {
-		if (Object.prototype.toString.call(jsfun) !== "[object Function]") return error("no fun")
-		this.jsfun = jsfun
-	}
-	JSFun.prototype.wat_combine = function(m, e, o) { 
-		return this.jsfun.apply(null, list_to_array(o))
-	}
-	function jswrap(jsfun) { return wrap(new JSFun(jsfun)) }
+	function JSFun(fun) { this.fun = fun }
+	function jsfun(fun) { return Object.prototype.toString.call(fun) === "[object Function]" ? new JSFun(fun) : error("no fun") }
+	JSFun.prototype.wat_combine = function(m, e, o) { return this.fun.apply(null, list_to_array(o))	}
+	function jswrap(fun) { return wrap(jsfun(fun)) }
 	var js_types = ["Array", "Boolean", "Date", "Function", "Number", "Object", "RegExp", "String"]
 	function is_type(obj, type_obj, type_name) {
 		if (!type_obj) return error("type is undefined")
@@ -483,7 +475,7 @@ module.exports = function Qua() {
 	TakeSubcont.prototype.toString = function() { return "vm-take-subcont" }
 	PushSubcont.prototype.toString = function() { return "vm-push-subcont" }
 	PushPromptSubcont.prototype.toString = function() { return "vm-push-prompt-subcont" }
-	JSFun.prototype.toString = function() { return "[JSFun " + this.jsfun.toString() + "]" }
+	JSFun.prototype.toString = function() { return "[JSFun " + this.fun.toString() + "]" }
 	
 	/* Bootstrap */
 	
@@ -544,7 +536,7 @@ module.exports = function Qua() {
 			["vm-def", "==", jswrap((a,b)=> a == b)],
 			["vm-def", "eq", jswrap((a,b)=> eq(a,b))],
 			["vm-def", "to-string", jswrap(to_string)],
-			["vm-def", "assert", new JSFun(assert)],
+			["vm-def", "assert", jsfun(assert)],
 		]
 	var the_environment = env()
 	bind(the_environment, sym("vm-def"), new Def())
