@@ -61,8 +61,6 @@
     ($vau (params env-param . body) #ignore
       (list vm-vau params env-param (list* begin body)) )))
 
-
-
 ($define! macro
   (make-macro-expander
     ($vau (params . body) #ignore

@@ -1,6 +1,8 @@
 // Qua VM by Manuel Simoni (msimoni@gmail.com)
 module.exports = function Qua() {
 	
+	var trace = false
+	
 	/* Continuations */
 	function StackFrame(fun, next, dbg, e) { this.fun = fun; this.next = next; this.dbg = dbg; this.e = e }
 
@@ -25,12 +27,9 @@ module.exports = function Qua() {
 		return suspendFrame(res, m=> monadic(m, a, b))
 	}
 	
-	
 	/* Forms */
 	function Nil() { }; var NIL = new Nil()
 	function Ign() { }; var IGN = new Ign()
-	
-	var trace = false
 	
 	/* Evaluation Core */
 	function evaluate(m, e, x) {
@@ -370,6 +369,7 @@ module.exports = function Qua() {
 	function jsfun(fun) { return Object.prototype.toString.call(fun) === "[object Function]" ? new JSFun(fun) : error("no fun") }
 	JSFun.prototype.wat_combine = function(m, e, o) { return this.fun.apply(null, list_to_array(o))	}
 	function jswrap(fun) { return wrap(jsfun(fun)) }
+	
 	var js_types = ["Array", "Boolean", "Date", "Function", "Number", "Object", "RegExp", "String"]
 	function is_type(obj, type_obj, type_name) {
 		if (!type_obj) return error("type is undefined")
