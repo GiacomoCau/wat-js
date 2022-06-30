@@ -324,6 +324,7 @@ module.exports = function Qua() {
 	}
 	function eq(a, b) {
 		if (a instanceof Cons && b instanceof Cons) return eq(a.car, b.car) && eq(a.cdr, b.cdr)
+		if (a instanceof Sym && b instanceof Sym) return a.name === b.name
 		return a === b 
 	}
 	function assert(a, b) {
@@ -457,6 +458,14 @@ module.exports = function Qua() {
 			if (cdr(c) instanceof Cons) return to_string(car(c)) + " " + cons_to_string(cdr(c))
 			return to_string(car(c)) + " . " + to_string(cdr(c))
 		}
+	}
+	Env.prototype.toString = function() {
+		if (this == the_environment)
+			var s = 'the-environment'
+		else {	
+		 	var s=''; for (let n in Object.getOwnPropertyNames(this.bindings)) s+= (!s?'':' ') + n + "=" + this.bindings[n];
+		}
+		return "[Env" + (!s?'':', '+s) + (!this.parent?'':' '+this.parent.toString()) + "]"
 	}
 	Apv.prototype.toString = function() { return "[Apv " + to_string(this.cmb) + "]" }
 	Opv.prototype.toString = function() { return "[Opv " + to_string(this.p) + " " + to_string(this.ep) + " " + to_string(this.x) + "]" }
