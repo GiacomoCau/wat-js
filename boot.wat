@@ -141,10 +141,6 @@
       (list* (list* $lambda (map-list car x) rest)
              (map-list cadr x) )))
 
-(define-macro (let-loop name bindings . body)
-  (list letrec (list (list name (list* $lambda (map-list car bindings) body)))
-        (list* name (map-list cadr bindings) )))
-
 (define-macro (let* bindings . body)
   (if (nil? bindings)
       (list* let () body)
@@ -158,6 +154,10 @@
                (list* list (map-list cadr bindings)))
          body))
 
+(define-macro (let-loop name bindings . body)
+  (list letrec (list (list name (list* $lambda (map-list car bindings) body)))
+        (list* name (map-list cadr bindings) )))
+
 (define-macro (lambda params . body)
   (letrec ((typed-params->names-and-checks
             ($lambda (ps)
@@ -170,7 +170,7 @@
                           (cons (cons name names) (cons check checks)))
                         (cons (cons p names) checks)))
                   (cons ps ())))))
-    (let (((untyped-names . type-checks) (typed-params->names-and-checks params)))
+    (let ( ((untyped-names . type-checks) (typed-params->names-and-checks params)) )
       (list* $lambda untyped-names (list* begin type-checks) body))))
 
 (define-macro (define lhs . rhs)
@@ -478,5 +478,3 @@
 (define (user-break err)
   ;(print-stacktrace err)
   (throw err) )
-
-

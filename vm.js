@@ -46,8 +46,8 @@ module.exports = function Qua() {
 	Cons.prototype.wat_eval = function(m, e) {
 		return monadic(
 			null,
-			() => evaluate(null, e, car(this)),
-			op => combine(null, e, op, cdr(this))
+			() => evaluate(null, e, this.car),
+			op => combine(null, e, op, this.cdr)
 		)
 	}
 	function cons(car, cdr) { return new Cons(car, cdr) }
@@ -68,6 +68,7 @@ module.exports = function Qua() {
 		if (cmb instanceof Function) return jswrap(cmb).wat_combine(m, e, o) // Function x default applicative
 								//	 return Apv.prototype.wat_combine.call(new JSFun(cmb), m, e, o) 
 								//   return new JSFun(cmb).wat_combine(m, e, o) // Function x default operative
+								//   return jsfun(cmb).wat_combine(m, e, o) // Function x default operative
 								//   return cmb.apply(null, list_to_array(o))
 		return error("not a combiner: " + to_string(cmb) + " in: " + cons(cmb, o))
 	}
@@ -76,10 +77,10 @@ module.exports = function Qua() {
 		var xe = env(this.e)
 		return monadic(
 			null,
-			()=> bind(xe, this.p, o),
+			()=> bind(xe, this.p, o, this),
 			__=> monadic(
 				null,
-				()=> bind(xe, this.ep, e),
+				()=> bind(xe, this.ep, e, this),
 				__ => evaluate(null, xe, this.x)
 			)
 		)
@@ -110,31 +111,37 @@ module.exports = function Qua() {
 		if (len(o) > 3) return error("too many operands in: " + cons(this, o));
 		var ptree = elt(o, 0)
 		var envp = elt(o, 1)
-		var msg = pcheck(ptree, envp); if (msg) return error(msg + " in " + cons(this, o))
+		var msg = pcheck(ptree, envp); if (msg) return error(msg + " of: " + cons(this, o))
 		return new Opv(ptree, envp, elt(o, 2), e)
 	}
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
 		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
-		var lhs = elt(o, 0)
-		var msg = pcheck(lhs); if (msg) return error(msg + " in " + cons(this, o))
+		var ptree = elt(o, 0) // almeno un parametro, singolo o nel parameters tree insieme ad #ignore
+		if (!(ptree instanceof Sym)) {
+			if (!(ptree instanceof Cons)) return error("not a symbol: " + ptree + " in: " + cons(this, o)) 
+			var msg = pcheck(ptree); if (msg) return error(msg + " of: " + cons(this, o))
+		}
 		var rhs = elt(o, 1)
 		return monadic(
 			null,
 			()=> evaluate(null, e, rhs),
-			val=> bind(e, lhs, val)
+			val=> bind(e, ptree, val, cons(this, o))
 		)
 	}
 	function pcheck(ptree, envp) {
-		var symbols = {}
-		if (envp !== undefined && envp != IGN && !(envp instanceof Sym)) return "not #ignore or a symbol: " + envp
-		var msg = pcheck(ptree); if (msg != null) return msg
-		return envp === undefined || envp == IGN || !(envp in symbols) ? null : "not a unique symbol: " + envp
-		return pcheck(ptree)
-		function pcheck(ptree) {
-			if (ptree == NIL || ptree == IGN) return null
-			if (ptree instanceof Sym) { return !(ptree in symbols) ? (symbols[ptree]=true, null) : "not a unique symbol: " + ptree }
-			if (ptree instanceof Cons) { var msg = pcheck(car(ptree)); return msg != null ? msg : pcheck(cdr(ptree)) }
-			return "not a symbol: " + ptree
+		var symbols = new Set()
+		if (ptree != NIL && ptree != IGN) {	var msg = pcheck(ptree); if (msg != null) return msg }
+		if (!envp) return symbols.size > 0 ? null : "no one symbol in: " + ptree
+		if (envp && envp != IGN) {
+			if (!(envp instanceof Sym)) return "not a #ignore or symbol: " + envp
+			if (symbols.has(envp.name)) return "not a unique symbol: " + envp
+		}
+		function pcheck(p) {
+			if (p == IGN) return null
+			if (p instanceof Sym) return !symbols.has(p.name) ? (symbols.add(p.name), null) : "not a unique symbol: " + p + (p == ptree ? "" : " in: " + ptree)
+			if (!(p instanceof Cons)) return "not a #ignore or symbol: " + p + (p == ptree ? "" : " in: " + ptree) 
+			var msg = pcheck(p.car); if (msg != null) return msg
+			return p.cdr == NIL ? null : pcheck(p.cdr)
 		}
 	}
 	Eval.prototype.wat_combine = function(m, e, o) { // error handling
@@ -270,14 +277,20 @@ module.exports = function Qua() {
 		return e.bindings[name]
 	}
 	
-	function bind(e, lhs, rhs) {
-		if (lhs.wat_match) { lhs.wat_match(e, rhs); return IGN }
-		return error("cannot match against: " + lhs)
+	function bind(e, lhs, rhs, exp) {
+		if (!lhs.wat_match) return error("cannot match against: " + lhs)
+		try {
+			var msg = lhs.wat_match(e, rhs);
+		}
+		catch (e) { // error in car() or cdr()
+			var msg = "insufficient arguments" 
+		}
+		return !msg ? IGN : error(msg + " in bind: " + lhs + (!exp? '' : " of: " + exp) + " with: " + rhs)
 	}
-	Sym.prototype.wat_match = function(e, rhs) { e.bindings[this.name] = rhs; if (trace) print("bind:", this.name, rhs, e); return IGN }
+	Sym.prototype.wat_match = function(e, rhs) { e.bindings[this.name] = rhs; if (trace) print("bind:", this.name, rhs, e); }
 	Cons.prototype.wat_match = function(e, rhs) {
-		if (!this.car.wat_match) return error("cannot match against: " + this.car + " in: " + this)
-		if (!this.cdr.wat_match) return error("cannot match against: " + this.cdr + " in: " + this) 
+		if (!this.car.wat_match) return "cannot match against: " + this.car
+		if (!this.cdr.wat_match) return "cannot match against: " + this.cdr 
 		return monadic(
 			null,
 			()=> this.car.wat_match(e, car(rhs)),
@@ -285,7 +298,7 @@ module.exports = function Qua() {
 		)
 	}
 	Nil.prototype.wat_match = function(e, rhs) {
-		if (rhs !== NIL) return error("NIL expected, but got: " + to_string(rhs))
+		if (rhs !== NIL) return "too many arguments" //+ ", NIL expected, but got: " + to_string(rhs)
 	}
 	Ign.prototype.wat_match = function(e, rhs) { }
 	
@@ -330,14 +343,11 @@ module.exports = function Qua() {
 	function assert(a, b) {
 		try {
 			var v = evaluate(null, env(the_environment), a)
-			if (arguments.length == 1) 
-				print(a, "should be throw but is", v)
-			else if (!eq(v, b))
-				print(a, "should be", b, "but is", v);
+			if (arguments.length == 1) print(a, "should be throw but is", v)
+			else if (!eq(v, b)) print(a, "should be", b, "but is", v);
 		}
 		catch (t) {
-			if (arguments.length > 1)
-				print(a, "throw", t);
+			if (arguments.length > 1) print(a, "throw", t);
 		}
 	}
 	
@@ -440,7 +450,8 @@ module.exports = function Qua() {
 	
 	/* Stringification */
 	function to_string() {
-		var s=''; for(let arg of arguments) s+= (s==''?'':' ') + to_string(arg); return s
+		var s=''; for (let arg of arguments) s += (!s?'':' ') + to_string(arg); return s
+		/* TODO sostituito dal seguente
 		function to_string(obj) {
 			if (toString.call(obj) === "[object String]") return obj //JSON.stringify(obj)
 			if (obj !== null && obj !== undefined) return obj.toString()
@@ -448,15 +459,29 @@ module.exports = function Qua() {
 			if (obj !== undefined) return "#undefined"
 			return Object.prototype.toString.call(obj)
 		}
+		*/
+		function to_string(obj) {
+			if (obj === null) return "#null"
+			if (obj === undefined) return "#undefined"
+			if (toString.call(obj) === "[object String]") return obj //JSON.stringify(obj)
+			return obj.toString() // Object.prototype.toString.call(obj)
+		}
 	}
 	Nil.prototype.toString = function() { return "()" }
 	Ign.prototype.toString = function() { return "#ignore" }
 	Sym.prototype.toString = function() { return this.name }
 	Cons.prototype.toString = function() { return "(" + cons_to_string(this) + ")"
+		/* TODO sostituito dal seguente
 		function cons_to_string(c) {
 			if (cdr(c) === NIL) return to_string(car(c))
 			if (cdr(c) instanceof Cons) return to_string(car(c)) + " " + cons_to_string(cdr(c))
 			return to_string(car(c)) + " . " + to_string(cdr(c))
+		}
+		*/
+		function cons_to_string(c) {
+			if (c.cdr === NIL) return to_string(c.car)
+			if (c.cdr instanceof Cons) return to_string(c.car) + " " + cons_to_string(c.cdr)
+			return to_string(c.car) + " . " + to_string(c.cdr)
 		}
 	}
 	Env.prototype.toString = function() {
