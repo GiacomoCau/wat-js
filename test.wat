@@ -5,25 +5,23 @@
 ;;;; Utilities
 
 (define-operative (assert-true expr) env
-  (log
-    (if (== (eval expr env) #t) #t
-      (error (+ "Should be true: " expr)) )))
+  (unless (== (eval expr env) #t)
+    (error (+ "Should be true: " expr)) ))
 
 (define-operative (assert-false expr) env
-  (log
-    (if (== (eval expr env) #f) #t
-      (error (+ "Should be false: " expr)) )))
+  (unless (== (eval expr env) #f)
+    (error (+ "Should be false: " expr)) ))
 
 (define-operative (assert-equal expected expr2) env
   (let ((res (eval expr2 env)))
-	(log
-      (if (== (eval expected env) res) #t
-        (error (+ expr2 " should be " expected " but is " res)) ))))
+    (unless (== (eval expected env) res)
+      (error (+ expr2 " should be " expected " but is " res)) )))
 
 (define-operative (assert-throws expr) env
-  (log
-    (catch (begin (eval expr env) (+ "Should throw: " expr))
-      (lambda (e) #t) )))
+  (label return
+    (catch (eval expr env)
+      (lambda (exc) (return)))
+    (error (+ "Should throw: " expr)) ))
 
 (assert-throws (lambda))
 (assert-throws (lambda 12 12))
@@ -114,14 +112,12 @@
 
 (assert-throws (unwrap ($vau () #ignore)))
 
-
 (let ((obj (object ("x" 1))))
   (set (.x obj) 2)
   (assert-equal 2 (.x obj))
   ;(set (@ obj "x") 3) not a combiner: [object Undefined] in: (3 obj "x")
   (set (.x obj) 3)
   (assert-equal 3 (.x obj)) )
-
 
 (assert-equal &x #undefined)
 (set &x 2)

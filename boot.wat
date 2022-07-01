@@ -111,40 +111,42 @@
 
 ($define! map-list
   ($lambda (f lst)
-    (if (nil? lst)
-        ()
+    (if (nil? lst) ()
         (cons (f (car lst)) (map-list f (cdr lst))) )))
 
 ($define! list-for-each
   ($lambda (f lst)
-    (if (nil? lst)
-        ()
+    (if (nil? lst) ()
         (begin (f (car lst)) (list-for-each f (cdr lst))) )))
 
 ($define! list-keep
   ($lambda (p lst)
-    (if (nil? lst)
-        ()
+    (if (nil? lst) ()
         (if (p (car lst))
             (cons (car lst) (list-keep p (cdr lst)))
             (list-keep p (cdr lst)) ))))
 
 ($define! fold-list
   ($lambda (f init lst)
-    (if (nil? lst)
-        init
+    (if (nil? lst) init
         (fold-list f (f init (car lst)) (cdr lst)) )))
 
-(define-macro (let x . rest)
-  (if (symbol? x)
-      (list* let-loop x rest)
-      (list* (list* $lambda (map-list car x) rest)
-             (map-list cadr x) )))
+(define-macro (let bindings . body)
+  (if (symbol? bindings)
+      (list* let-loop bindings body)
+      (list* (list* $lambda (map-list car bindings) body)
+             (map-list cadr bindings) )))
+
+(define-macro (let-loop name bindings . body)
+  (list letrec
+  		(list (list name (list* $lambda (map-list car bindings) body)))
+        (list* name (map-list cadr bindings) )))
 
 (define-macro (let* bindings . body)
   (if (nil? bindings)
       (list* let () body)
-      (list let (list (car bindings))
+      (list let
+      		(list (car bindings))
             (list* let* (cdr bindings) body) )))
 
 (define-macro (letrec bindings . body)
@@ -153,10 +155,6 @@
                (map-list car bindings)
                (list* list (map-list cadr bindings)))
          body))
-
-(define-macro (let-loop name bindings . body)
-  (list letrec (list (list name (list* $lambda (map-list car bindings) body)))
-        (list* name (map-list cadr bindings) )))
 
 (define-macro (lambda params . body)
   (letrec ((typed-params->names-and-checks
@@ -478,3 +476,4 @@
 (define (user-break err)
   ;(print-stacktrace err)
   (throw err) )
+
