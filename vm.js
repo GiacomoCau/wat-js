@@ -163,13 +163,13 @@ module.exports = function Qua() {
 
 	function Apv(cmb) { this.cmb = cmb }
 	Apv.prototype.wat_combine = function(m, e, o) {
-		var args = isResumption(m) ? resumeFrame(m) : evalArgs(null, e, o, nil)
+		var args = isResumption(m) ? resumeFrame(m) : evalRest(null, e, o, nil)
 		return isSuspension(args) ? suspendFrame(args, m=> this.wat_combine(m, e, o)) : this.cmb.wat_combine(null, e, args)
 	}
-	function evalArgs(m, e, todo, done) {
+	function evalRest(m, e, todo, done) {
 		if (todo === nil) return reverse_list(done) 
 		var arg = isResumption(m) ? resumeFrame(m) : evaluate(null, e, car(todo))
-		return isSuspension(arg) ? suspendFrame(arg, m=> evalArgs(m, e, todo, done)) : evalArgs(null, e, cdr(todo), cons(arg, done))
+		return isSuspension(arg) ? suspendFrame(arg, m=> evalRest(m, e, todo, done)) : evalRest(null, e, cdr(todo), cons(arg, done))
 	}
 	Apv.prototype.toString = function() { return "[Apv " + to_string(this.cmb) + "]" }
 	function wrap(cmb) { return cmb && cmb.wat_combine ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
@@ -188,15 +188,14 @@ module.exports = function Qua() {
 	}
 	Vau.prototype.toString = function() { return "vm-vau" }
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
-		// o = (pt arg)
-		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
+		// o = (pt args)
 		var pt = elt(o, 0) // almeno un parametro, singolo o nel parameters tree insieme ad #ignore
 		if (!(pt instanceof Sym)) {
 			if (!(pt instanceof Cons)) return error("not a symbol: " + pt + " in: " + cons(this, o)) 
 			var msg = pcheck(pt); if (msg) return error(msg + " of: " + cons(this, o))
 		}
-		var arg = elt(o, 1)
-		var val = isResumption(m) ? resumeFrame(m) : evaluate(null, e, arg)
+		var args = cdr(o)
+		var val = isResumption(m) ? resumeFrame(m) : evalRest(null, e, args, nil)
 		return isSuspension(val) ? suspendFrame(val, m=> this.wat_combine(m, e, o)) : bind(e, pt, val, cons(this, o))
 	}
 	Def.prototype.toString = function() { return "vm-def" }
@@ -539,62 +538,62 @@ module.exports = function Qua() {
 	var builtin_bytecode =
 		["vm-begin",
 			// Basics
-			["vm-def", "vm-vau", new Vau()],
-			["vm-def", "vm-eval", wrap(new Eval())],
-			["vm-def", "vm-make-environment", jswrap(parent=> env(parent))],
-			["vm-def", "vm-wrap", jswrap(wrap)],
-			["vm-def", "vm-unwrap", jswrap(unwrap)],
+			["vm-def", ["vm-vau"], new Vau()],
+			["vm-def", ["vm-eval"], wrap(new Eval())],
+			["vm-def", ["vm-make-environment"], jswrap(parent=> env(parent))],
+			["vm-def", ["vm-wrap"], jswrap(wrap)],
+			["vm-def", ["vm-unwrap"], jswrap(unwrap)],
 			// Values
-			["vm-def", "vm-cons", jswrap(cons)],
-			["vm-def", "vm-cons?", jswrap(obj=> obj instanceof Cons)],
-			["vm-def", "vm-nil?", jswrap(obj=> obj === nil)],
-			["vm-def", "vm-string-to-symbol", jswrap(sym)],
-			["vm-def", "vm-symbol?", jswrap(obj=> obj instanceof Sym)],
-			["vm-def", "vm-symbol-name", jswrap(sym_name)],
+			["vm-def", ["vm-cons"], jswrap(cons)],
+			["vm-def", ["vm-cons?"], jswrap(obj=> obj instanceof Cons)],
+			["vm-def", ["vm-nil?"], jswrap(obj=> obj === nil)],
+			["vm-def", ["vm-string-to-symbol"], jswrap(sym)],
+			["vm-def", ["vm-symbol?"], jswrap(obj=> obj instanceof Sym)],
+			["vm-def", ["vm-symbol-name"], jswrap(sym_name)],
 			// First-order Control
-			["vm-def", "vm-if", new If()],
-			["vm-def", "vm-loop", new Loop()],
-			["vm-def", "vm-throw", jswrap(function(err) { throw err })],
-			["vm-def", "vm-catch", new Catch()],
-			["vm-def", "vm-finally", new Finally()],
+			["vm-def", ["vm-if"], new If()],
+			["vm-def", ["vm-loop"], new Loop()],
+			["vm-def", ["vm-throw"], jswrap(function(err) { throw err })],
+			["vm-def", ["vm-catch"], new Catch()],
+			["vm-def", ["vm-finally"], new Finally()],
 			// Delimited Control
-			["vm-def", "vm-push-prompt", new PushPrompt()],
-			["vm-def", "vm-take-subcont", wrap(new TakeSubcont())],
-			["vm-def", "vm-push-subcont", wrap(new PushSubcont())],
-			["vm-def", "vm-push-prompt-subcont", wrap(new PushPromptSubcont())],
+			["vm-def", ["vm-push-prompt"], new PushPrompt()],
+			["vm-def", ["vm-take-subcont"], wrap(new TakeSubcont())],
+			["vm-def", ["vm-push-subcont"], wrap(new PushSubcont())],
+			["vm-def", ["vm-push-prompt-subcont"], wrap(new PushPromptSubcont())],
 			// Dynamically-scoped Variables
-			["vm-def", "vm-dnew", wrap(new DNew())],
-			["vm-def", "vm-dlet", new DLet()],
-			["vm-def", "vm-dref", wrap(new DRef())],
+			["vm-def", ["vm-dnew"], wrap(new DNew())],
+			["vm-def", ["vm-dlet"], new DLet()],
+			["vm-def", ["vm-dref"], wrap(new DRef())],
 			// Errors
-			["vm-def", "vm-root-prompt", ROOT_PROMPT],
-			["vm-def", "vm-error", jswrap(error)],
+			["vm-def", ["vm-root-prompt"], ROOT_PROMPT],
+			["vm-def", ["vm-error"], jswrap(error)],
 			// JS Interface
-			["vm-def", "vm-js-wrap", jswrap(jswrap)],
-			["vm-def", "vm-js-unop", jswrap(js_unop)],
-			["vm-def", "vm-js-binop", jswrap(js_binop)],
-			["vm-def", "vm-js-getter", jswrap(js_getter)],
-			["vm-def", "vm-js-setter", jswrap(js_setter)],
-			["vm-def", "vm-js-invoker", jswrap(js_invoker)],
-			["vm-def", "vm-js-function", jswrap(js_function)],
-			["vm-def", "vm-js-global", JS_GLOBAL],
-			["vm-def", "vm-js-make-object", jswrap(function() { return {} })],
-			["vm-def", "vm-js-make-prototype", jswrap(make_prototype)],
-			["vm-def", "vm-js-new", jswrap(jsnew)],
-			["vm-def", "vm-type?", jswrap(is_type)],
+			["vm-def", ["vm-js-wrap"], jswrap(jswrap)],
+			["vm-def", ["vm-js-unop"], jswrap(js_unop)],
+			["vm-def", ["vm-js-binop"], jswrap(js_binop)],
+			["vm-def", ["vm-js-getter"], jswrap(js_getter)],
+			["vm-def", ["vm-js-setter"], jswrap(js_setter)],
+			["vm-def", ["vm-js-invoker"], jswrap(js_invoker)],
+			["vm-def", ["vm-js-function"], jswrap(js_function)],
+			["vm-def", ["vm-js-global"], JS_GLOBAL],
+			["vm-def", ["vm-js-make-object"], jswrap(function() { return {} })],
+			["vm-def", ["vm-js-make-prototype"], jswrap(make_prototype)],
+			["vm-def", ["vm-js-new"], jswrap(jsnew)],
+			["vm-def", ["vm-type?"], jswrap(is_type)],
 			// Setters
-			["vm-def", "vm-setter", SETTER],
+			["vm-def", ["vm-setter"], SETTER],
 			// Utilities
-			["vm-def", "vm-list", jswrap(list)],
-			["vm-def", "vm-list*", jswrap(list_star)],
-			["vm-def", "vm-list-to-array", jswrap(list_to_array)],
-			["vm-def", "vm-array-to-list", jswrap(array_to_list)],
-			["vm-def", "vm-reverse-list", jswrap(reverse_list)],
-			["vm-def", "==", jswrap((a,b)=> a == b)],
-			["vm-def", "eq", jswrap((a,b)=> eq(a,b))],
-			["vm-def", "to-string", jswrap(to_string)],
-			["vm-def", "assert", jsfun(assert)],
-			["vm-def", "trace", jsfun(b=>trace=b)],
+			["vm-def", ["vm-list"], jswrap(list)],
+			["vm-def", ["vm-list*"], jswrap(list_star)],
+			["vm-def", ["vm-list-to-array"], jswrap(list_to_array)],
+			["vm-def", ["vm-array-to-list"], jswrap(array_to_list)],
+			["vm-def", ["vm-reverse-list"], jswrap(reverse_list)],
+			["vm-def", ["=="], jswrap((a,b)=> a == b)],
+			["vm-def", ["eq"], jswrap((a,b)=> eq(a,b))],
+			["vm-def", ["to-string"], jswrap(to_string)],
+			["vm-def", ["assert"], jsfun(assert)],
+			["vm-def", ["trace"], jsfun(b=>trace=b)],
 		]
 	var the_environment = env()
 	bind(the_environment, sym("vm-def"), new Def())

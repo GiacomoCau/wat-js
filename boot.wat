@@ -2,79 +2,138 @@
 
 ;; ``72. An adequate bootstrap is a contradiction in terms.''
 
+;; Assert vm
+(assert (vm-def))      ; throw
+(assert (vm-def a)     #ignore) ; a=()
+(assert (vm-def a 1)   #ignore) ; a=(1)
+(assert (vm-def a 1 2) #ignore) ; a=(1 2)
+ 
+(assert (vm-begin (vm-def (a) 1) a)         1)
+(assert (vm-begin (vm-def (a b) 1 2) b)     2)
+(assert (vm-begin (vm-def (a . b) 1 2) b)   (2))
+(assert (vm-begin (vm-def (a . b) 1 2 3) b) (2 3))
+
+(assert (vm-def (a))                  ) ; throw
+(assert (vm-def (a) 1)         #ignore)
+(assert (vm-def (a b) 1 2)     #ignore)
+(assert (vm-def (a) 1 2)              ) ; throw
+(assert (vm-def (a . b) 1 2)   #ignore)        
+(assert (vm-def (a . b) 1 2 3) #ignore)  
+(assert (vm-def (a . a) 1 2 3)        ) ; throw
+
+(assert (vm-def 1 1)) ; throw
+(assert (vm-def "a" 1)) ; throw
+
+
+(assert (vm-begin)     #null)
+(assert (vm-begin 1)   1)
+(assert (vm-begin 1 2) 2)
+
+(assert (vm-if)           ) ;throw
+(assert (vm-if #t)        ) ;throw
+(assert (vm-if #t 1)      1)
+(assert (vm-if #f 1)      ) ;throw
+(assert (vm-if #t 1 2)    1)
+(assert (vm-if #f 1 2)    2)
+(assert (vm-if #f 1 2 3)  ) ;throw
+
+(assert ((vm-vau))                 ) ;throw
+(assert ((vm-vau a))               ) ;throw
+(assert ((vm-vau a #ignore))       ) ;throw
+
+(assert ((vm-vau a #ignore a))     ())
+(assert ((vm-vau a #ignore a) 1)   (1))
+(assert ((vm-vau a #ignore a) 1 2) (1 2))
+(assert ((vm-vau a #ignore b))     ) ;throw
+(assert ((vm-vau (a) #ignore a) 1) 1)
+(assert ((vm-vau a #ignore 1 a) 1) ) ;throw
+
+(assert ((vm-vau 1 #ignore 1))   ) ;throw
+(assert ((vm-vau "a" #ignore 1)) ) ;throw
+(assert ((vm-vau a a 1))         ) ;throw
+(assert ((vm-vau (a . a) e 1))   ) ;throw
+
 ;; Rename ur-def
-(vm-def $define! vm-def)
+(vm-def ($define!) vm-def)
 
 ;; Rename bindings that will be used as provided by VM
-($define! array->list vm-array-to-list)
-($define! begin vm-begin)
-($define! cons vm-cons)
-($define! cons? vm-cons?)
-($define! dnew vm-dnew)
-($define! dref vm-dref)
-($define! error vm-error)
-($define! eval vm-eval)
-($define! if vm-if)
-($define! js-getter vm-js-getter)
-($define! js-global vm-js-global)
-($define! js-invoker vm-js-invoker)
-($define! list* vm-list*)
-($define! list->array vm-list-to-array)
-($define! make-environment vm-make-environment)
-($define! new vm-js-new)
-($define! nil? vm-nil?)
-($define! reverse-list vm-reverse-list)
-($define! setter vm-setter)
-($define! string->symbol vm-string-to-symbol)
-($define! symbol-name vm-symbol-name)
-($define! symbol? vm-symbol?)
-($define! throw vm-throw)
-($define! unwrap vm-unwrap)
-($define! wrap vm-wrap)
+($define! (array->list) vm-array-to-list)
+($define! (begin) vm-begin)
+($define! (cons) vm-cons)
+($define! (cons?) vm-cons?)
+($define! (dnew) vm-dnew)
+($define! (dref) vm-dref)
+($define! (error) vm-error)
+($define! (eval) vm-eval)
+($define! (if) vm-if)
+($define! (js-getter) vm-js-getter)
+($define! (js-global) vm-js-global)
+($define! (js-invoker) vm-js-invoker)
+($define! (list*) vm-list*)
+($define! (list->array) vm-list-to-array)
+($define! (make-environment) vm-make-environment)
+($define! (new) vm-js-new)
+($define! (nil?) vm-nil?)
+($define! (reverse-list) vm-reverse-list)
+($define! (setter) vm-setter)
+($define! (string->symbol) vm-string-to-symbol)
+($define! (symbol-name) vm-symbol-name)
+($define! (symbol?) vm-symbol?)
+($define! (throw) vm-throw)
+($define! (unwrap) vm-unwrap)
+($define! (wrap) vm-wrap)
 
 ;; Important utilities
-($define! $vau vm-vau)
-($define! quote ($vau (x) #ignore x))
-($define! list (wrap ($vau elts #ignore elts)))
-($define! the-environment ($vau () e e))
-($define! get-current-environment (wrap ($vau () e e)))
+($define! ($vau) vm-vau)
+($define! (quote) ($vau (x) #ignore x))
+($define! (list) (wrap ($vau elts #ignore elts)))
+($define! (the-environment) ($vau () e e))
+($define! (get-current-environment) (wrap ($vau () e e)))
+
+($define! (log) (wrap ($vau (msg) env (@log &console msg) )))
 
 ;;;; Macro and vau
 
 ; derivazione Shutt!
-;($define! $vau
+;($define! ($vau)
 ; ((wrap
 ;     ($vau ($vau) #ignore
 ;       ($vau (formals eformal . body) env
 ;         (eval (list $vau formals eformal (cons begin body)) env) )))
 ;   $vau ))
 
-($define! make-macro-expander
+($define! (make-macro-expander)
   (wrap
     ($vau (expander) #ignore
       ($vau operands env
         (eval (eval (cons expander operands) (make-environment)) env) ))))
 
 ; derivazione Simoni!
-($define! $vau
+($define! ($vau)
   (make-macro-expander
     ($vau (params env-param . body) #ignore
       (list vm-vau params env-param (list* begin body)) )))
+  
+(assert (($vau a #ignore 1 2 3 4 5 a) 6) (6))
+(assert (($vau (a) #ignore 1 2 3 4 5 a) 6) 6)
 
-($define! macro
+($define! (macro)
   (make-macro-expander
     ($vau (params . body) #ignore
       (list make-macro-expander (list* $vau params #ignore body)) )))
 
-($define! define-macro
+($define! (define-macro)
   (macro ((name . params) . body)
-    (list $define! name (list* macro params body)) ))
+    (list $define! (list name) (list* macro params body)) ))
 
 (define-macro ($lambda params . body)
   (list wrap (list* $vau params #ignore body)) )
 
+(assert (($lambda (m)  ) 1) #null) 
+(assert (($lambda (m) m) 1) 1)
+
 (define-macro (define-operative (name . params) envparam . body)
-  (list $define! name (list* $vau params envparam body)) )
+  (list $define! (list name) (list* $vau params envparam body)) )
 
 ;;;; Wrap incomplete VM forms
 
@@ -98,35 +157,39 @@
 
 ;;;; List utilities
 
-($define! compose ($lambda (f g) ($lambda (arg) (f (g arg)))))
+($define! (compose) ($lambda (f g) ($lambda (arg) (f (g arg)))))
 
-($define! car ($lambda ((x . #ignore)) x))
-($define! cdr ($lambda ((#ignore . x)) x))
-($define! caar (compose car car))
-($define! cadr (compose car cdr))
-($define! cdar (compose cdr car))
-($define! cddr (compose cdr cdr))
+($define! (car) ($lambda ((x . #ignore)) x))
+($define! (cdr) ($lambda ((#ignore . x)) x))
+($define! (caar) (compose car car))
+($define! (cadr) (compose car cdr))
+($define! (cdar) (compose cdr car))
+($define! (cddr) (compose cdr cdr))
 
 ;;;; Important macros and functions
 
-($define! map-list
+($define! (map-list)
   ($lambda (f lst)
     (if (nil? lst) ()
         (cons (f (car lst)) (map-list f (cdr lst))) )))
 
-($define! list-for-each
+(assert (map-list car '((a 1)(b 2))) (a b))
+(assert (map-list cadr '((a 1)(b 2))) (1 2))
+(assert (($vau l e (list* '$define (map-list car l) (map-list cadr l))) (a 1)(b 2))  ($define (a b) 1 2)) 
+
+($define! (list-for-each)
   ($lambda (f lst)
     (if (nil? lst) ()
         (begin (f (car lst)) (list-for-each f (cdr lst))) )))
 
-($define! list-keep
+($define! (list-keep)
   ($lambda (p lst)
     (if (nil? lst) ()
         (if (p (car lst))
             (cons (car lst) (list-keep p (cdr lst)))
             (list-keep p (cdr lst)) ))))
 
-($define! fold-list
+($define! (fold-list)
   ($lambda (f init lst)
     (if (nil? lst) init
         (fold-list f (f init (car lst)) (cdr lst)) )))
@@ -149,12 +212,24 @@
       		(list (car bindings))
             (list* let* (cdr bindings) body) )))
 
+(assert (let* () 1) 1)
+(assert (let* ((a 1)(b a)) b) 1)
+
 (define-macro (letrec bindings . body)
   (list* let ()
-         (list $define!
+         (list* $define!
                (map-list car bindings)
-               (list* list (map-list cadr bindings)))
+               (map-list cadr bindings))
          body))
+
+(assert (letrec ( (a 1)) a) 1)
+(assert (letrec ( (a ($lambda () 1)) ) (a)) 1)
+
+(define-macro (let-loop name bindings . body)
+  (list letrec (list (list name (list* $lambda (map-list car bindings) body)))
+        (list* name (map-list cadr bindings) )))
+
+(assert (let-loop l ((a 1)) a) 1)
 
 (define-macro (lambda params . body)
   (letrec ((typed-params->names-and-checks
@@ -173,8 +248,8 @@
 
 (define-macro (define lhs . rhs)
   (if (cons? lhs)
-    (list $define! (car lhs) (list* lambda (cdr lhs) rhs))
-    (list $define! lhs (car rhs))))
+    (list $define! (list (car lhs)) (list* lambda (cdr lhs) rhs))
+    (list $define! (list lhs) (car rhs))))
 
 (define (apply appv arg . opt)
   (if (instanceof appv &Function)
@@ -253,7 +328,7 @@
 ;;;; Prototypes
 
 (define-operative (define-prototype name super-name prop-names) env
-  (eval (list $define! name (make-prototype name super-name prop-names env)) env))
+  (eval (list $define! (list name) (make-prototype name super-name prop-names env)) env))
 
 (define (make-prototype name super-name prop-names env)
   (let ((p (apply vm-js-make-prototype (list* (symbol-name name) (map-list symbol-name prop-names))))
@@ -263,7 +338,7 @@
     p ))
 
 (define-macro (define-generic (name . #ignore))
-  (list $define! name (lambda args (apply ((js-getter name) (car args)) args))))
+  (list $define! (list name) (lambda args (apply ((js-getter name) (car args)) args))))
 
 (define-macro (define-method (name (self ctor) . args) . body)
   (list put-method ctor (symbol-name name) (list* lambda (list* self args) body)))
@@ -287,7 +362,7 @@
     (make-environment menv) ))
 
 (define-macro (define-module name exports . body)
-  (list $define! name (list* module exports body)) )
+  (list $define! (list name) (list* module exports body)) )
 
 (define-operative (import module imports) env
   (let* ((m (eval module env))
