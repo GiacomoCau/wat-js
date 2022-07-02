@@ -25,6 +25,11 @@ module.exports = function Qua() {
 		if (!isSuspension(res))
 			return b(res)
 		return suspendFrame(res, m=> monadic(m, a, b))
+		
+		/* TODO in alternativa al precedente
+		var res = !isResumption(m) ? a : resumeFrame(m)
+		return !isSuspension(res) ? b(res) : suspendFrame(res, m=> monadic(m, a, b))
+		*/
 	}
 	
 	/* Forms */
@@ -65,11 +70,12 @@ module.exports = function Qua() {
 		if (trace) print("combine:", cons(cmb, o))
 		if (cmb && cmb.wat_combine)	return cmb.wat_combine(m, e, o)
 		// TODO per default le Function non wrapped dovrebbero essere operative e non applicative
-		if (cmb instanceof Function) return jswrap(cmb).wat_combine(m, e, o) // Function x default applicative
-								//	 return Apv.prototype.wat_combine.call(new JSFun(cmb), m, e, o) 
-								//   return new JSFun(cmb).wat_combine(m, e, o) // Function x default operative
-								//   return jsfun(cmb).wat_combine(m, e, o) // Function x default operative
-								//   return cmb.apply(null, list_to_array(o))
+		if (cmb instanceof Function)
+			return jswrap(cmb).wat_combine(m, e, o) // Function x default applicative
+			//	 return Apv.prototype.wat_combine.call(new JSFun(cmb), m, e, o) 
+			//   return new JSFun(cmb).wat_combine(m, e, o) // Function x default operative
+			//   return jsfun(cmb).wat_combine(m, e, o)
+			//   return cmb.apply(null, list_to_array(o))
 		return error("not a combiner: " + to_string(cmb) + " in: " + cons(cmb, o))
 	}
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
@@ -130,7 +136,7 @@ module.exports = function Qua() {
 	}
 	function pcheck(ptree, envp) {
 		var symbols = new Set()
-		if (ptree != NIL && ptree != IGN) {	var msg = pcheck(ptree); if (msg != null) return msg }
+		if (ptree != NIL && ptree != IGN) {	var msg = pcheck(ptree); if (msg) return msg }
 		if (!envp) return symbols.size > 0 ? null : "no one symbol in: " + ptree
 		if (envp && envp != IGN) {
 			if (!(envp instanceof Sym)) return "not a #ignore or symbol: " + envp
@@ -140,7 +146,7 @@ module.exports = function Qua() {
 			if (p == IGN) return null
 			if (p instanceof Sym) return !symbols.has(p.name) ? (symbols.add(p.name), null) : "not a unique symbol: " + p + (p == ptree ? "" : " in: " + ptree)
 			if (!(p instanceof Cons)) return "not a #ignore or symbol: " + p + (p == ptree ? "" : " in: " + ptree) 
-			var msg = pcheck(p.car); if (msg != null) return msg
+			var msg = pcheck(p.car); if (msg) return msg
 			return p.cdr == NIL ? null : pcheck(p.cdr)
 		}
 	}
@@ -277,6 +283,7 @@ module.exports = function Qua() {
 		return e.bindings[name]
 	}
 	
+	/* Bind */
 	function bind(e, lhs, rhs, exp) {
 		if (!lhs.wat_match) return error("cannot match against: " + lhs)
 		try {
@@ -363,10 +370,7 @@ module.exports = function Qua() {
 			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
 			var head = cons(parse_bytecode(arr[0]), NIL), c = head
 			for (var i=1; i<arr.length; i+=1) {
-				if (arr[i] !== ".") {
-					c = c.cdr = cons(parse_bytecode(arr[i]), NIL)
-					continue
-				}
+				if (arr[i] !== ".") { c = c.cdr = cons(parse_bytecode(arr[i]), NIL); continue }
 				if (i != arr.length-2) throw error(". not is the penultimate element in " + arr)
 				c.cdr = parse_bytecode(arr[i+1])
 				return head
@@ -392,15 +396,11 @@ module.exports = function Qua() {
 	function js_invoker(method_name) {
 		return jswrap(
 			function(rcv) {
-				if (arguments.length < 1)
-					return error("invoker called with wrong args: " + arguments)
-				if (!method_name)
-					return error("method name is null/undefined")
-				if (!rcv) 
-					return error("receiver is null/undefined")
+				if (arguments.length < 1) return error("invoker called with wrong args: " + arguments)
+				if (!method_name) return error("method name is null/undefined")
+				if (!rcv) return error("receiver is null/undefined")
 				var method = rcv[method_name]
-				if (!method)
-					return error("method not found: " + method_name + " in: " + to_string(rcv))
+				if (!method) return error("method not found: " + method_name + " in: " + to_string(rcv))
 				return method.apply(rcv, Array.prototype.slice.call(arguments, 1))
 			}
 		)

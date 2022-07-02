@@ -115,7 +115,7 @@
 (let ((obj (object ("x" 1))))
   (set (.x obj) 2)
   (assert-equal 2 (.x obj))
-  ;(set (@ obj "x") 3) not a combiner: [object Undefined] in: (3 obj "x")
+  ;(set (@ obj "x") 3) ; give not a combiner: [object Undefined] in: (3 obj "x")
   (set (.x obj) 3)
   (assert-equal 3 (.x obj)) )
 
