@@ -393,11 +393,11 @@ module.exports = function Qua() {
 	function js_unop(op) { return jswrap(new Function("a", "return (" + op + " a)")) }
 	function js_binop(op) { return jswrap(new Function("a", "b", "return (a " + op + " b)")) }
 	function js_invoker(method_name) {
+		if (!method_name) return error("method name is null/undefined")
 		return jswrap(
 			function(rcv) {
-				if (arguments.length < 1) return error("invoker called with wrong args: " + arguments)
-				if (!method_name) return error("method name is null/undefined")
 				if (!rcv) return error("receiver is null/undefined")
+				if (arguments.length < 1) return error("invoker called with wrong args: " + arguments)
 				var method = rcv[method_name]
 				if (!method) return error("method not found: " + method_name + " in: " + to_string(rcv))
 				return method.apply(rcv, Array.prototype.slice.call(arguments, 1))
