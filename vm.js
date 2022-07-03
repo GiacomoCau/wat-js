@@ -16,21 +16,6 @@ module.exports = function Qua() {
 		suspension.k = new StackFrame(fun, suspension.k, dbg, e)
 		return suspension
 	}
-
-	function monadic(m, a, b) {
-		if (!isResumption(m))
-			var res = a()
-		else
-			var res = resumeFrame(m)
-		if (!isSuspension(res))
-			return b(res)
-		return suspendFrame(res, m=> monadic(m, a, b))
-		
-		/* TODO in alternativa al precedente
-		var res = !isResumption(m) ? a : resumeFrame(m)
-		return !isSuspension(res) ? b(res) : suspendFrame(res, m=> monadic(m, a, b))
-		*/
-	}
 	
 	/* Forms */
 	function Nil() { }; var NIL = new Nil()
@@ -49,11 +34,8 @@ module.exports = function Qua() {
 
 	function Cons(car, cdr) { this.car = car; this.cdr = cdr }
 	Cons.prototype.wat_eval = function(m, e) {
-		return monadic(
-			null,
-			() => evaluate(null, e, this.car),
-			op => combine(null, e, op, this.cdr)
-		)
+		var op = isResumption(m) ? resumeFrame(m) : evaluate(null, e, this.car)
+		return isSuspension(op) ? suspendFrame(op, m=> this.wat_eval(m, e)) : combine(null, e, op, this.cdr)
 	}
 	function cons(car, cdr) { return new Cons(car, cdr) }
 	function car(cons) { // tc
@@ -81,31 +63,17 @@ module.exports = function Qua() {
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
 	Opv.prototype.wat_combine = function(m, e, o) {
 		var xe = env(this.e)
-		return monadic(
-			null,
-			()=> bind(xe, this.p, o, this),
-			__=> monadic(
-				null,
-				()=> bind(xe, this.ep, e, this),
-				__ => evaluate(null, xe, this.x)
-			)
-		)
+		bind(xe, this.p, o, this); bind(xe, this.ep, e, this); return evaluate(null, xe, this.x)
 	}
 	function Apv(cmb) { this.cmb = cmb }
 	Apv.prototype.wat_combine = function(m, e, o) {
-		return monadic(
-			null,
-			()=> evalArgs(null, e, o, NIL),
-			args=> this.cmb.wat_combine(null, e, args)
-		)
+		var args = isResumption(m) ? resumeFrame(m) : evalArgs(null, e, o, NIL)
+		return isSuspension(args) ? suspendFrame(args, m=> this.wat_combine(m, e, o)) : this.cmb.wat_combine(null, e, args)
 	}
 	function evalArgs(m, e, todo, done) {
 		if (todo === NIL) return reverse_list(done) 
-		return monadic(
-			null,
-			()=> evaluate(null, e, car(todo)),
-			arg=> evalArgs(null, e, cdr(todo), cons(arg, done))
-		)
+		var arg = isResumption(m) ? resumeFrame(m) : evaluate(null, e, car(todo))
+		return isSuspension(arg) ? suspendFrame(arg, m=> evalArgs(m, e, todo, done)) : evalArgs(null, e, cdr(todo), cons(arg, done))
 	}
 	function wrap(cmb) { return cmb && cmb.wat_combine ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
 	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
@@ -128,11 +96,8 @@ module.exports = function Qua() {
 			var msg = pcheck(ptree); if (msg) return error(msg + " of: " + cons(this, o))
 		}
 		var rhs = elt(o, 1)
-		return monadic(
-			null,
-			()=> evaluate(null, e, rhs),
-			val=> bind(e, ptree, val, cons(this, o))
-		)
+		var val = isResumption(m) ? resumeFrame(m) : evaluate(null, e, rhs)
+		return isSuspension(val) ? suspendFrame(val, m=> this.wat_combine(m, e, o)) : bind(e, ptree, val, cons(this, o))
 	}
 	function pcheck(ptree, envp) {
 		var symbols = new Set()
@@ -160,23 +125,14 @@ module.exports = function Qua() {
 	Begin.prototype.wat_combine = function(m, e, o) {
 		return o === NIL ? null : begin(m, e, o)
 		function begin(m, e, xs) {
-			return monadic(
-				null,
-				()=> evaluate(null, e, car(xs)),
-				res=> {
-					var kdr = cdr(xs)
-					return kdr === NIL ? res : begin(null, e, kdr)
-				}
-			)
+			var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, car(xs))
+			return isSuspension(res) ? suspendFrame(res, m=> begin(m, e, xs)) : (kdr=> kdr === NIL ? res : begin(null, e, kdr))(cdr(xs))
 		}
 	}
 	If.prototype.wat_combine = function(m, e, o) {
 		if (len(o) > 3) return error("too many operands in: " + cons(this, o));
-		return monadic(
-			null,
-			()=> evaluate(null, e, elt(o, 0)),
-			test=> evaluate(null, e, test ? elt(o, 1) : elt(o, 2))
-		)
+		var test = isResumption(m) ? resumeFrame(m) : evaluate(null, e, elt(o, 0))
+		return isSuspension(test) ? suspendFrame(test, m=> this.wat_combine(m, e, o)) : evaluate(null, e, test ? elt(o, 1) : elt(o, 2))
 	}
 	Loop.prototype.wat_combine = function self(m, e, o) {
 		var first = true // only resume once
@@ -297,11 +253,7 @@ module.exports = function Qua() {
 	Cons.prototype.wat_match = function(e, rhs) {
 		if (!this.car.wat_match) return "cannot match against: " + this.car
 		if (!this.cdr.wat_match) return "cannot match against: " + this.cdr 
-		return monadic(
-			null,
-			()=> this.car.wat_match(e, car(rhs)),
-			__=> this.cdr.wat_match(e, cdr(rhs))
-		)
+		this.car.wat_match(e, car(rhs)); return this.cdr.wat_match(e, cdr(rhs));
 	}
 	Nil.prototype.wat_match = function(e, rhs) {
 		if (rhs !== NIL) return "too many arguments" //+ ", NIL expected, but got: " + to_string(rhs)
