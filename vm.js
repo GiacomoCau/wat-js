@@ -138,10 +138,9 @@ module.exports = function Qua() {
 		var symbols = new Set()
 		if (ptree != NIL && ptree != IGN) {	var msg = pcheck(ptree); if (msg) return msg }
 		if (!envp) return symbols.size > 0 ? null : "no one symbol in: " + ptree
-		if (envp && envp != IGN) {
-			if (!(envp instanceof Sym)) return "not a #ignore or symbol: " + envp
-			if (symbols.has(envp.name)) return "not a unique symbol: " + envp
-		}
+		if (envp == IGN) return null
+		if (!(envp instanceof Sym)) return "not a #ignore or symbol: " + envp
+		return !symbols.has(envp.name) ? null : "not a unique symbol: " + envp
 		function pcheck(p) {
 			if (p == IGN) return null
 			if (p instanceof Sym) return !symbols.has(p.name) ? (symbols.add(p.name), null) : "not a unique symbol: " + p + (p == ptree ? "" : " in: " + ptree)
