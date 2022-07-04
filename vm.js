@@ -414,7 +414,7 @@ module.exports = function Qua() {
 		function to_string(obj) {
 			if (obj === null) return "#null"
 			if (obj === undefined) return "#undefined"
-			if (toString.call(obj) === "[object String]") return obj //JSON.stringify(obj)
+			if (toString.call(obj) === "[object String]") return obj //JSON.stringify(obj) // con o senza apici?
 			return obj.toString() // Object.prototype.toString.call(obj)
 		}
 	}
@@ -437,7 +437,7 @@ module.exports = function Qua() {
 	}
 	Env.prototype.toString = function() {
 		if (this == the_environment)
-			var s = 'the-environment'
+			var s = 'The-Environment'
 		else {	
 		 	var s=''; for (let n in Object.getOwnPropertyNames(this.bindings)) s+= (!s?'':' ') + n + "=" + this.bindings[n];
 		}
@@ -460,10 +460,13 @@ module.exports = function Qua() {
 	TakeSubcont.prototype.toString = function() { return "vm-take-subcont" }
 	PushSubcont.prototype.toString = function() { return "vm-push-subcont" }
 	PushPromptSubcont.prototype.toString = function() { return "vm-push-prompt-subcont" }
-	JSFun.prototype.toString = function() { return "[JSFun " + this.fun.toString() + "]" }
+	JSFun.prototype.toString = function() { return "[JSFun " + this.fun + "]" }
+	StackFrame.prototype.toString = function() { return "[StackFrame " + this.fun + " " + this.dbg + " " + this.e + "]" }
+	Resumption.prototype.toString = function() { return "[Resumption " + this.f + " " + this.k + "]" }
+	Suspension.prototype.toString = function() { return "[Suspension " + this.prompt + " " + this.handler + " " + this.k +  "]" }
+	
 	
 	/* Bootstrap */
-	
 	var builtin_bytecode =
 		["vm-begin",
 			// Basics

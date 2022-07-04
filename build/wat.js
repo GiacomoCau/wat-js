@@ -1,5 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.wat = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-module.exports.main = [["vm-def","$define!","vm-def"],["$define!","array->list","vm-array-to-list"],["$define!","begin","vm-begin"],["$define!","cons","vm-cons"],["$define!","cons?","vm-cons?"],["$define!","dnew","vm-dnew"],["$define!","dref","vm-dref"],["$define!","error","vm-error"],["$define!","eval","vm-eval"],["$define!","if","vm-if"],["$define!","js-getter","vm-js-getter"],["$define!","js-global","vm-js-global"],["$define!","js-invoker","vm-js-invoker"],["$define!","list*","vm-list*"],["$define!","list->array","vm-list-to-array"],["$define!","make-environment","vm-make-environment"],["$define!","new","vm-js-new"],["$define!","nil?","vm-nil?"],["$define!","reverse-list","vm-reverse-list"],["$define!","setter","vm-setter"],["$define!","string->symbol","vm-string-to-symbol"],["$define!","symbol-name","vm-symbol-name"],["$define!","symbol?","vm-symbol?"],["$define!","throw","vm-throw"],["$define!","unwrap","vm-unwrap"],["$define!","wrap","vm-wrap"],["$define!","$vau","vm-vau"],["$define!","quote",["$vau",["x"],"#ignore","x"]],["$define!","list",["wrap",["$vau","elts","#ignore","elts"]]],["$define!","the-environment",["$vau",[],"e","e"]],["$define!","get-current-environment",["wrap",["$vau",[],"e","e"]]],["$define!","make-macro-expander",["wrap",["$vau",["expander"],"#ignore",["$vau","operands","env",["eval",["eval",["cons","expander","operands"],["make-environment"]],"env"]]]]],["$define!","$vau",["make-macro-expander",["$vau",["params","env-param",".","body"],"#ignore",["list","vm-vau","params","env-param",["list*","begin","body"]]]]],["$define!","macro",["make-macro-expander",["$vau",["params",".","body"],"#ignore",["list","make-macro-expander",["list*","$vau","params","#ignore","body"]]]]],["$define!","define-macro",["macro",[["name",".","params"],".","body"],["list","$define!","name",["list*","macro","params","body"]]]],["define-macro",["$lambda","params",".","body"],["list","wrap",["list*","$vau","params","#ignore","body"]]],["define-macro",["define-operative",["name",".","params"],"envparam",".","body"],["list","$define!","name",["list*","$vau","params","envparam","body"]]],["define-macro",["loop",".","body"],["list","vm-loop",["list*","begin","body"]]],["define-operative",["catch","protected","handler"],"env",["eval",["list","vm-catch","protected",["eval","handler","env"]],"env"]],["define-operative",["push-prompt","prompt",".","body"],"env",["eval",["list","vm-push-prompt",["eval","prompt","env"],["list*","begin","body"]],"env"]],["define-macro",["take-subcont","prompt","k",".","body"],["list","vm-take-subcont","prompt",["list*","$lambda",["list","k"],"body"]]],["define-macro",["push-subcont","k",".","body"],["list","vm-push-subcont","k",["list*","$lambda",[],"body"]]],["define-macro",["push-prompt-subcont","p","k",".","body"],["list","vm-push-prompt-subcont","p","k",["list*","$lambda",[],"body"]]],["$define!","compose",["$lambda",["f","g"],["$lambda",["arg"],["f",["g","arg"]]]]],["$define!","car",["$lambda",[["x",".","#ignore"]],"x"]],["$define!","cdr",["$lambda",[["#ignore",".","x"]],"x"]],["$define!","caar",["compose","car","car"]],["$define!","cadr",["compose","car","cdr"]],["$define!","cdar",["compose","cdr","car"]],["$define!","cddr",["compose","cdr","cdr"]],["$define!","map-list",["$lambda",["f","lst"],["if",["nil?","lst"],[],["cons",["f",["car","lst"]],["map-list","f",["cdr","lst"]]]]]],["$define!","list-for-each",["$lambda",["f","lst"],["if",["nil?","lst"],[],["begin",["f",["car","lst"]],["list-for-each","f",["cdr","lst"]]]]]],["$define!","list-keep",["$lambda",["p","lst"],["if",["nil?","lst"],[],["if",["p",["car","lst"]],["cons",["car","lst"],["list-keep","p",["cdr","lst"]]],["list-keep","p",["cdr","lst"]]]]]],["$define!","fold-list",["$lambda",["f","init","lst"],["if",["nil?","lst"],"init",["fold-list","f",["f","init",["car","lst"]],["cdr","lst"]]]]],["define-macro",["let","x",".","rest"],["if",["symbol?","x"],["list*","let-loop","x","rest"],["list*",["list*","$lambda",["map-list","car","x"],"rest"],["map-list","cadr","x"]]]],["define-macro",["let-loop","name","bindings",".","body"],["list","letrec",["list",["list","name",["list*","$lambda",["map-list","car","bindings"],"body"]]],["list*","name",["map-list","cadr","bindings"]]]],["define-macro",["let*","bindings",".","body"],["if",["nil?","bindings"],["list*","let",[],"body"],["list","let",["list",["car","bindings"]],["list*","let*",["cdr","bindings"],"body"]]]],["define-macro",["letrec","bindings",".","body"],["list*","let",[],["list","$define!",["map-list","car","bindings"],["list*","list",["map-list","cadr","bindings"]]],"body"]],["define-macro",["lambda","params",".","body"],["letrec",[["typed-params->names-and-checks",["$lambda",["ps"],["if",["cons?","ps"],["let*",[[["p",".","rest-ps"],"ps"],[["names",".","checks"],["typed-params->names-and-checks","rest-ps"]]],["if",["cons?","p"],["let*",[[["name","type"],"p"],["check",["list","the","type","name"]]],["cons",["cons","name","names"],["cons","check","checks"]]],["cons",["cons","p","names"],"checks"]]],["cons","ps",[]]]]]],["let",[[["untyped-names",".","type-checks"],["typed-params->names-and-checks","params"]]],["list*","$lambda","untyped-names",["list*","begin","type-checks"],"body"]]]],["define-macro",["define","lhs",".","rhs"],["if",["cons?","lhs"],["list","$define!",["car","lhs"],["list*","lambda",["cdr","lhs"],"rhs"]],["list","$define!","lhs",["car","rhs"]]]],["define",["apply","appv","arg",".","opt"],["if",["instanceof","appv",["js-global",["wat-string","Function"]]],[["js-invoker",["wat-string","apply"]],"appv",null,["list->array","arg"]],["eval",["cons",["unwrap","appv"],"arg"],["if",["nil?","opt"],["make-environment"],["car","opt"]]]]],["define-operative",["cond",".","clauses"],"env",["if",["nil?","clauses"],null,["let",[[[["test",".","body"],".","clauses"],"clauses"]],["if",["eval","test","env"],["apply",["wrap","begin"],"body","env"],["apply",["wrap","cond"],"clauses","env"]]]]],["define","else",true],["define-operative",["and",".","x"],"e",["cond",[["nil?","x"],true],[["nil?",["cdr","x"]],["eval",["car","x"],"e"]],[["eval",["car","x"],"e"],["apply",["wrap","and"],["cdr","x"],"e"]],["else",false]]],["define-operative",["or",".","x"],"e",["cond",[["nil?","x"],false],[["nil?",["cdr","x"]],["eval",["car","x"],"e"]],[["eval",["car","x"],"e"],true],["else",["apply",["wrap","or"],["cdr","x"],"e"]]]],["define",["call-with-escape","fun"],["let",[["fresh",["list",null]]],["catch",["fun",["$lambda","opt-arg",["throw",["list","fresh","opt-arg"]]]],["$lambda",["exc"],["if",["and",["cons?","exc"],["===","fresh",["car","exc"]]],["let",[["opt-arg",["cadr","exc"]]],["if",["cons?","opt-arg"],["car","opt-arg"],null]],["throw","exc"]]]]]],["define-macro",["label","name",".","body"],["list","call-with-escape",["list*","$lambda",["list","name"],"body"]]],["define-operative",["while","test",".","body"],"env",["let",[["body",["list*","begin","body"]]],["label","return",["loop",["if",["eval","test","env"],["eval","body","env"],["return"]]]]]],["define-macro",["when","test",".","body"],["list","if","test",["list*","begin","body"],null]],["define-macro",["unless","test",".","body"],["list*","when",["list","not","test"],"body"]],["define-macro",["set",["getter",".","args"],"new-val"],["list*",["list","setter","getter"],"new-val","args"]],["define-operative",["dlet","bindings",".","body"],"env",["eval",["let","process-bindings",[["bs","bindings"]],["if",["nil?","bs"],["list*","begin","body"],["let*",[[[["name","expr"],".","rest-bs"],"bs"],["value",["eval","expr","env"]]],["list","vm-dlet","name","value",["process-bindings","rest-bs"]]]]],"env"]],["define-operative",["define-prototype","name","super-name","prop-names"],"env",["eval",["list","$define!","name",["make-prototype","name","super-name","prop-names","env"]],"env"]],["define",["make-prototype","name","super-name","prop-names","env"],["let",[["p",["apply","vm-js-make-prototype",["list*",["symbol-name","name"],["map-list","symbol-name","prop-names"]]]],["super",["eval","super-name","env"]]],["set",[["js-getter",["wat-string","prototype"]],"p"],[["js-invoker",["wat-string","create"]],["js-global",["wat-string","Object"]],[["js-getter",["wat-string","prototype"]],"super"]]],["set",[["js-getter",["wat-string","constructor"]],[["js-getter",["wat-string","prototype"]],"p"]],"super"],"p"]],["define-macro",["define-generic",["name",".","#ignore"]],["list","$define!","name",["lambda","args",["apply",[["js-getter","name"],["car","args"]],"args"]]]],["define-macro",["define-method",["name",["self","ctor"],".","args"],".","body"],["list","put-method","ctor",["symbol-name","name"],["list*","lambda",["list*","self","args"],"body"]]],["define",["put-method","ctor","name","fun"],["set",[["js-getter","name"],[["js-getter",["wat-string","prototype"]],"ctor"]],"fun"]],["define-operative",["provide","symbols",".","body"],"env",["eval",["list","$define!","symbols",["list","let",[],["list*","begin","body"],["list*","list","symbols"]]],"env"]],["define-operative",["module","exports",".","body"],"env",["let",[["menv",["make-environment","env"]]],["eval",["list*","provide","exports","body"],"menv"],["make-environment","menv"]]],["define-macro",["define-module","name","exports",".","body"],["list","$define!","name",["list*","module","exports","body"]]],["define-operative",["import","module","imports"],"env",["let*",[["m",["eval","module","env"]],["values",["map-list",["$lambda",["import"],["eval","import","m"]],"imports"]]],["eval",["list","$define!","imports",["list*","list","values"]],"env"]]],["define",["relational-op","name"],["let",[["binop",["vm-js-binop","name"]]],["letrec",[["op",["lambda",["arg1","arg2",".","rest"],["if",["binop","arg1","arg2"],["if",["nil?","rest"],true,["apply","op",["list*","arg2","rest"]]],false]]]],"op"]]],["define","==",["relational-op",["wat-string","=="]]],["define","===",["relational-op",["wat-string","==="]]],["define","<",["relational-op",["wat-string","<"]]],["define",">",["relational-op",["wat-string",">"]]],["define","<=",["relational-op",["wat-string","<="]]],["define",">=",["relational-op",["wat-string",">="]]],["define",["!=",".","args"],["not",["apply","==","args"]]],["define",["!==",".","args"],["not",["apply","===","args"]]],["define","*",["let",[["vm*",["vm-js-binop",["wat-string","*"]]]],["lambda","args",["fold-list","vm*",1,"args"]]]],["define","+",["let",[["vm+",["vm-js-binop",["wat-string","+"]]]],["lambda","args",["if",["nil?","args"],0,["fold-list","vm+",["car","args"],["cdr","args"]]]]]],["define",["negative-op","binop","unit"],["lambda",["arg1",".","rest"],["if",["nil?","rest"],["binop","unit","arg1"],["fold-list","binop","arg1","rest"]]]],["define","-",["negative-op",["vm-js-binop",["wat-string","-"]],0]],["define","/",["negative-op",["vm-js-binop",["wat-string","/"]],1]],["define","%",["vm-js-binop",["wat-string","%"]]],["define","not",["vm-js-unop",["wat-string","!"]]],["define","typeof",["vm-js-unop",["wat-string","typeof"]]],["define","in",["vm-js-binop",["wat-string","in"]]],["define","instanceof",["vm-js-binop",["wat-string","instanceof"]]],["define","bitand",["vm-js-binop",["wat-string","&"]]],["define","bitor",["vm-js-binop",["wat-string","|"]]],["define","bitxor",["vm-js-binop",["wat-string","^"]]],["define","bitnot",["vm-js-unop",["wat-string","~"]]],["define","bitshiftl",["vm-js-binop",["wat-string","<<"]]],["define","bitshiftr",["vm-js-binop",["wat-string",">>"]]],["define","bitshiftr0",["vm-js-binop",["wat-string",">>>"]]],["define-operative",["object",".","pairs"],"env",["let",[["obj",["vm-js-make-object"]]],["map-list",["$lambda",[["name","value"]],["set",[["js-getter",["eval","name","env"]],"obj"],["eval","value","env"]]],"pairs"],"obj"]],["define",["elt","object","key"],[["js-getter","key"],"object"]],["set",["setter","elt"],["lambda",["new-val","object","key"],["set",[["js-getter","key"],"object"],"new-val"]]],["define",["array",".","args"],["list->array","args"]],["define",["js-callback","fun"],["vm-js-function",["$lambda","args",["push-prompt","vm-root-prompt",["apply","fun","args"]]]]],["define-macro",["js-lambda","params",".","body"],["list","js-callback",["list*","lambda","params","body"]]],["define-macro",["type?","obj","type"],["list","vm-type?","obj","type",["symbol-name","type"]]],["define-macro",["the","type","obj"],["list","if",["list","type?","obj","type"],"obj",["list","error",["list","+","obj",["wat-string"," is not a: "],"type"]]]],["define","Array",["js-global",["wat-string","Array"]]],["define","Boolean",["js-global",["wat-string","Boolean"]]],["define","Date",["js-global",["wat-string","Date"]]],["define","Function",["js-global",["wat-string","Function"]]],["define","Number",["js-global",["wat-string","Number"]]],["define","Object",["js-global",["wat-string","Object"]]],["define","RegExp",["js-global",["wat-string","RegExp"]]],["define","String",["js-global",["wat-string","String"]]],["define",["log","x",".","xs"],["apply",["js-invoker",["wat-string","log"]],["list*",["js-global",["wat-string","console"]],"x","xs"]],"x"],["define-prototype","Cell","Object",["value"]],["define",["cell","value"],["new","Cell","value"]],["define",["ref",["c","Cell"]],[["js-getter",["wat-string","value"]],"c"]],["set",["setter","ref"],["lambda",["new-val",["c","Cell"]],["set",[["js-getter",["wat-string","value"]],"c"],"new-val"]]],["define-macro",["++","place"],["list","set","place",["list","+","place",1]]],["define-macro",["--","place"],["list","set","place",["list","-","place",1]]],["define",["map-array","fun",["arr","Array"]],["list->array",["map-list","fun",["array->list","arr"]]]],["define",["array-keep","pred",["arr","Array"]],["list->array",["list-keep","pred",["array->list","arr"]]]],["define-operative",["time","expr"],"env",["let",[["n",[["js-invoker",["wat-string","getTime"]],["new","Date"]]],["result",["eval","expr","env"]]],["log",["+",["wat-string","time "],"expr",["wat-string",": "],["-",[["js-invoker",["wat-string","getTime"]],["new","Date"]],"n"],["wat-string","ms"]]],"result"]],["define-operative",["assert","expr"],"env",["unless",["===",true,["eval","expr","env"]],["error",["+",["wat-string","Should be true: "],"expr"]]]],["define-operative",["assert-false","expr"],"env",["unless",["===",false,["eval","expr","env"]],["error",["+",["wat-string","Should be false: "],"expr"]]]],["define-operative",["assert-===","expected","expr2"],"env",["let",[["res",["eval","expr2","env"]],["exp",["eval","expected","env"]]],["unless",["===","exp","res"],["error",["+","expr2",["wat-string"," should be "],"exp",["wat-string"," but is "],"res"]]]]],["define-operative",["assert-==","expected","expr2"],"env",["let",[["res",["eval","expr2","env"]],["exp",["eval","expected","env"]]],["unless",["==","exp","res"],["error",["+","expr2",["wat-string"," should be "],"exp",["wat-string"," but is "],"res"]]]]],["define-operative",["assert-throws","expr"],"env",["label","return",["catch",["eval","expr","env"],["lambda",["exc"],["return"]]],["error",["+",["wat-string","Should throw: "],"expr"]]]],["define-prototype","Option","Object",[]],["define-prototype","Some","Option",["value"]],["define-prototype","None","Option",[]],["define",["some","value"],["new","Some","value"]],["define","none",["new","None"]],["define-operative",["if-option",["option-name","option-expr"],"then","else"],"env",["let",[["option",["the","Option",["eval","option-expr","env"]]]],["if",["type?","option","Some"],["eval",["list",["list","lambda",["list","option-name"],"then"],[["js-getter",["wat-string","value"]],"option"]],"env"],["eval","else","env"]]]],["define",["print-stacktrace","err"],["define",["print-frame","k"],["log",[["js-invoker",["wat-string","toString"]],[["js-getter",["wat-string","fun"]],"k"]],[["js-getter",["wat-string","dbg"]],"k"],[["js-getter",["wat-string","e"]],"k"]],["when",["type?",[["js-getter",["wat-string","next"]],"k"],["js-global",["wat-string","StackFrame"]]],["print-frame",[["js-getter",["wat-string","next"]],"k"]]]],["take-subcont","vm-root-prompt","k",["log","err"],["log","k"],["push-prompt","vm-root-prompt",["push-subcont","k"]]]],["define",["user-break","err"],["throw","err"]]]
+module.exports.main = [["vm-def","$define!","vm-def"],["$define!","array->list","vm-array-to-list"],["$define!","begin","vm-begin"],["$define!","cons","vm-cons"],["$define!","cons?","vm-cons?"],["$define!","dnew","vm-dnew"],["$define!","dref","vm-dref"],["$define!","error","vm-error"],["$define!","eval","vm-eval"],["$define!","if","vm-if"],["$define!","js-getter","vm-js-getter"],["$define!","js-global","vm-js-global"],["$define!","js-invoker","vm-js-invoker"],["$define!","list*","vm-list*"],["$define!","list->array","vm-list-to-array"],["$define!","make-environment","vm-make-environment"],["$define!","new","vm-js-new"],["$define!","nil?","vm-nil?"],["$define!","reverse-list","vm-reverse-list"],["$define!","setter","vm-setter"],["$define!","string->symbol","vm-string-to-symbol"],["$define!","symbol-name","vm-symbol-name"],["$define!","symbol?","vm-symbol?"],["$define!","throw","vm-throw"],["$define!","unwrap","vm-unwrap"],["$define!","wrap","vm-wrap"],["$define!","$vau","vm-vau"],["$define!","quote",["$vau",["x"],"#ignore","x"]],["$define!","list",["wrap",["$vau","elts","#ignore","elts"]]],["$define!","the-environment",["$vau",[],"e","e"]],["$define!","get-current-environment",["wrap",["$vau",[],"e","e"]]],["$define!","make-macro-expander",["wrap",["$vau",["expander"],"#ignore",["$vau","operands","env",["eval",["eval",["cons","expander","operands"],["make-environment"]],"env"]]]]],["$define!","$vau",["make-macro-expander",["$vau",["params","env-param",".","body"],"#ignore",["list","vm-vau","params","env-param",["list*","begin","body"]]]]],["$define!","macro",["make-macro-expander",["$vau",["params",".","body"],"#ignore",["list","make-macro-expander",["list*","$vau","params","#ignore","body"]]]]],["$define!","define-macro",["macro",[["name",".","params"],".","body"],["list","$define!","name",["list*","macro","params","body"]]]],["define-macro",["$lambda","params",".","body"],["list","wrap",["list*","$vau","params","#ignore","body"]]],["define-macro",["define-operative",["name",".","params"],"envparam",".","body"],["list","$define!","name",["list*","$vau","params","envparam","body"]]],["define-macro",["loop",".","body"],["list","vm-loop",["list*","begin","body"]]],["define-operative",["catch","protected","handler"],"env",["eval",["list","vm-catch","protected",["eval","handler","env"]],"env"]],["define-operative",["push-prompt","prompt",".","body"],"env",["eval",["list","vm-push-prompt",["eval","prompt","env"],["list*","begin","body"]],"env"]],["define-macro",["take-subcont","prompt","k",".","body"],["list","vm-take-subcont","prompt",["list*","$lambda",["list","k"],"body"]]],["define-macro",["push-subcont","k",".","body"],["list","vm-push-subcont","k",["list*","$lambda",[],"body"]]],["define-macro",["push-prompt-subcont","p","k",".","body"],["list","vm-push-prompt-subcont","p","k",["list*","$lambda",[],"body"]]],["$define!","compose",["$lambda",["f","g"],["$lambda",["arg"],["f",["g","arg"]]]]],["$define!","car",["$lambda",[["x",".","#ignore"]],"x"]],["$define!","cdr",["$lambda",[["#ignore",".","x"]],"x"]],["$define!","caar",["compose","car","car"]],["$define!","cadr",["compose","car","cdr"]],["$define!","cdar",["compose","cdr","car"]],["$define!","cddr",["compose","cdr","cdr"]],["$define!","map-list",["$lambda",["f","lst"],["if",["nil?","lst"],[],["cons",["f",["car","lst"]],["map-list","f",["cdr","lst"]]]]]],["$define!","list-for-each",["$lambda",["f","lst"],["if",["nil?","lst"],[],["begin",["f",["car","lst"]],["list-for-each","f",["cdr","lst"]]]]]],["$define!","list-keep",["$lambda",["p","lst"],["if",["nil?","lst"],[],["if",["p",["car","lst"]],["cons",["car","lst"],["list-keep","p",["cdr","lst"]]],["list-keep","p",["cdr","lst"]]]]]],["$define!","fold-list",["$lambda",["f","init","lst"],["if",["nil?","lst"],"init",["fold-list","f",["f","init",["car","lst"]],["cdr","lst"]]]]],["define-macro",["let","bindings",".","body"],["if",["symbol?","bindings"],["list*","let-loop","bindings","body"],["list*",["list*","$lambda",["map-list","car","bindings"],"body"],["map-list","cadr","bindings"]]]],["define-macro",["let-loop","name","bindings",".","body"],["list","letrec",["list",["list","name",["list*","$lambda",["map-list","car","bindings"],"body"]]],["list*","name",["map-list","cadr","bindings"]]]],["define-macro",["let*","bindings",".","body"],["if",["nil?","bindings"],["list*","let",[],"body"],["list","let",["list",["car","bindings"]],["list*","let*",["cdr","bindings"],"body"]]]],["define-macro",["letrec","bindings",".","body"],["list*","let",[],["list","$define!",["map-list","car","bindings"],["list*","list",["map-list","cadr","bindings"]]],"body"]],["define-macro",["lambda","params",".","body"],["letrec",[["typed-params->names-and-checks",["$lambda",["ps"],["if",["cons?","ps"],["let*",[[["p",".","rest-ps"],"ps"],[["names",".","checks"],["typed-params->names-and-checks","rest-ps"]]],["if",["cons?","p"],["let*",[[["name","type"],"p"],["check",["list","the","type","name"]]],["cons",["cons","name","names"],["cons","check","checks"]]],["cons",["cons","p","names"],"checks"]]],["cons","ps",[]]]]]],["let",[[["untyped-names",".","type-checks"],["typed-params->names-and-checks","params"]]],["list*","$lambda","untyped-names",["list*","begin","type-checks"],"body"]]]],["define-macro",["define","lhs",".","rhs"],["if",["cons?","lhs"],["list","$define!",["car","lhs"],["list*","lambda",["cdr","lhs"],"rhs"]],["list","$define!","lhs",["car","rhs"]]]],["define",["apply","appv","arg",".","opt"],["if",["instanceof","appv",["js-global",["wat-string","Function"]]],[["js-invoker",["wat-string","apply"]],"appv",null,["list->array","arg"]],["eval",["cons",["unwrap","appv"],"arg"],["if",["nil?","opt"],["make-environment"],["car","opt"]]]]],["define-operative",["cond",".","clauses"],"env",["if",["nil?","clauses"],null,["let",[[[["test",".","body"],".","clauses"],"clauses"]],["if",["eval","test","env"],["apply",["wrap","begin"],"body","env"],["apply",["wrap","cond"],"clauses","env"]]]]],["define","else",true],["define-operative",["and",".","x"],"e",["cond",[["nil?","x"],true],[["nil?",["cdr","x"]],["eval",["car","x"],"e"]],[["eval",["car","x"],"e"],["apply",["wrap","and"],["cdr","x"],"e"]],["else",false]]],["define-operative",["or",".","x"],"e",["cond",[["nil?","x"],false],[["nil?",["cdr","x"]],["eval",["car","x"],"e"]],[["eval",["car","x"],"e"],true],["else",["apply",["wrap","or"],["cdr","x"],"e"]]]],["define",["call-with-escape","fun"],["let",[["fresh",["list",null]]],["catch",["fun",["$lambda","opt-arg",["throw",["list","fresh","opt-arg"]]]],["$lambda",["exc"],["if",["and",["cons?","exc"],["===","fresh",["car","exc"]]],["let",[["opt-arg",["cadr","exc"]]],["if",["cons?","opt-arg"],["car","opt-arg"],null]],["throw","exc"]]]]]],["define-macro",["label","name",".","body"],["list","call-with-escape",["list*","$lambda",["list","name"],"body"]]],["define-operative",["while","test",".","body"],"env",["let",[["body",["list*","begin","body"]]],["label","return",["loop",["if",["eval","test","env"],["eval","body","env"],["return"]]]]]],["define-macro",["when","test",".","body"],["list","if","test",["list*","begin","body"],null]],["define-macro",["unless","test",".","body"],["list*","when",["list","not","test"],"body"]],["define-macro",["set",["getter",".","args"],"new-val"],["list*",["list","setter","getter"],"new-val","args"]],["define-operative",["dlet","bindings",".","body"],"env",["eval",["let","process-bindings",[["bs","bindings"]],["if",["nil?","bs"],["list*","begin","body"],["let*",[[[["name","expr"],".","rest-bs"],"bs"],["value",["eval","expr","env"]]],["list","vm-dlet","name","value",["process-bindings","rest-bs"]]]]],"env"]],["define-operative",["define-prototype","name","super-name","prop-names"],"env",["eval",["list","$define!","name",["make-prototype","name","super-name","prop-names","env"]],"env"]],["define",["make-prototype","name","super-name","prop-names","env"],["let",[["p",["apply","vm-js-make-prototype",["list*",["symbol-name","name"],["map-list","symbol-name","prop-names"]]]],["super",["eval","super-name","env"]]],["set",[["js-getter",["wat-string","prototype"]],"p"],[["js-invoker",["wat-string","create"]],["js-global",["wat-string","Object"]],[["js-getter",["wat-string","prototype"]],"super"]]],["set",[["js-getter",["wat-string","constructor"]],[["js-getter",["wat-string","prototype"]],"p"]],"super"],"p"]],["define-macro",["define-generic",["name",".","#ignore"]],["list","$define!","name",["lambda","args",["apply",[["js-getter","name"],["car","args"]],"args"]]]],["define-macro",["define-method",["name",["self","ctor"],".","args"],".","body"],["list","put-method","ctor",["symbol-name","name"],["list*","lambda",["list*","self","args"],"body"]]],["define",["put-method","ctor","name","fun"],["set",[["js-getter","name"],[["js-getter",["wat-string","prototype"]],"ctor"]],"fun"]],["define-operative",["provide","symbols",".","body"],"env",["eval",["list","$define!","symbols",["list","let",[],["list*","begin","body"],["list*","list","symbols"]]],"env"]],["define-operative",["module","exports",".","body"],"env",["let",[["menv",["make-environment","env"]]],["eval",["list*","provide","exports","body"],"menv"],["make-environment","menv"]]],["define-macro",["define-module","name","exports",".","body"],["list","$define!","name",["list*","module","exports","body"]]],["define-operative",["import","module","imports"],"env",["let*",[["m",["eval","module","env"]],["values",["map-list",["$lambda",["import"],["eval","import","m"]],"imports"]]],["eval",["list","$define!","imports",["list*","list","values"]],"env"]]],["define",["relational-op","name"],["let",[["binop",["vm-js-binop","name"]]],["letrec",[["op",["lambda",["arg1","arg2",".","rest"],["if",["binop","arg1","arg2"],["if",["nil?","rest"],true,["apply","op",["list*","arg2","rest"]]],false]]]],"op"]]],["define","==",["relational-op",["wat-string","=="]]],["define","===",["relational-op",["wat-string","==="]]],["define","<",["relational-op",["wat-string","<"]]],["define",">",["relational-op",["wat-string",">"]]],["define","<=",["relational-op",["wat-string","<="]]],["define",">=",["relational-op",["wat-string",">="]]],["define",["!=",".","args"],["not",["apply","==","args"]]],["define",["!==",".","args"],["not",["apply","===","args"]]],["define","*",["let",[["vm*",["vm-js-binop",["wat-string","*"]]]],["lambda","args",["fold-list","vm*",1,"args"]]]],["define","+",["let",[["vm+",["vm-js-binop",["wat-string","+"]]]],["lambda","args",["if",["nil?","args"],0,["fold-list","vm+",["car","args"],["cdr","args"]]]]]],["define",["negative-op","binop","unit"],["lambda",["arg1",".","rest"],["if",["nil?","rest"],["binop","unit","arg1"],["fold-list","binop","arg1","rest"]]]],["define","-",["negative-op",["vm-js-binop",["wat-string","-"]],0]],["define","/",["negative-op",["vm-js-binop",["wat-string","/"]],1]],["define","%",["vm-js-binop",["wat-string","%"]]],["define","not",["vm-js-unop",["wat-string","!"]]],["define","typeof",["vm-js-unop",["wat-string","typeof"]]],["define","in",["vm-js-binop",["wat-string","in"]]],["define","instanceof",["vm-js-binop",["wat-string","instanceof"]]],["define","bitand",["vm-js-binop",["wat-string","&"]]],["define","bitor",["vm-js-binop",["wat-string","|"]]],["define","bitxor",["vm-js-binop",["wat-string","^"]]],["define","bitnot",["vm-js-unop",["wat-string","~"]]],["define","bitshiftl",["vm-js-binop",["wat-string","<<"]]],["define","bitshiftr",["vm-js-binop",["wat-string",">>"]]],["define","bitshiftr0",["vm-js-binop",["wat-string",">>>"]]],["define-operative",["object",".","pairs"],"env",["let",[["obj",["vm-js-make-object"]]],["map-list",["$lambda",[["name","value"]],["set",[["js-getter",["eval","name","env"]],"obj"],["eval","value","env"]]],"pairs"],"obj"]],["define",["elt","object","key"],[["js-getter","key"],"object"]],["set",["setter","elt"],["lambda",["new-val","object","key"],["set",[["js-getter","key"],"object"],"new-val"]]],["define",["array",".","args"],["list->array","args"]],["define",["js-callback","fun"],["vm-js-function",["$lambda","args",["push-prompt","vm-root-prompt",["apply","fun","args"]]]]],["define-macro",["js-lambda","params",".","body"],["list","js-callback",["list*","lambda","params","body"]]],["define-macro",["type?","obj","type"],["list","vm-type?","obj","type",["symbol-name","type"]]],["define-macro",["the","type","obj"],["list","if",["list","type?","obj","type"],"obj",["list","error",["list","+","obj",["wat-string"," is not a: "],"type"]]]],["define","Array",["js-global",["wat-string","Array"]]],["define","Boolean",["js-global",["wat-string","Boolean"]]],["define","Date",["js-global",["wat-string","Date"]]],["define","Function",["js-global",["wat-string","Function"]]],["define","Number",["js-global",["wat-string","Number"]]],["define","Object",["js-global",["wat-string","Object"]]],["define","RegExp",["js-global",["wat-string","RegExp"]]],["define","String",["js-global",["wat-string","String"]]],["define",["log","x",".","xs"],["apply",["js-invoker",["wat-string","log"]],["list*",["js-global",["wat-string","console"]],"x","xs"]],"x"],["define-prototype","Cell","Object",["value"]],["define",["cell","value"],["new","Cell","value"]],["define",["ref",["c","Cell"]],[["js-getter",["wat-string","value"]],"c"]],["set",["setter","ref"],["lambda",["new-val",["c","Cell"]],["set",[["js-getter",["wat-string","value"]],"c"],"new-val"]]],["define-macro",["++","place"],["list","set","place",["list","+","place",1]]],["define-macro",["--","place"],["list","set","place",["list","-","place",1]]],["define",["map-array","fun",["arr","Array"]],["list->array",["map-list","fun",["array->list","arr"]]]],["define",["array-keep","pred",["arr","Array"]],["list->array",["list-keep","pred",["array->list","arr"]]]],["define-operative",["time","expr"],"env",["let",[["n",[["js-invoker",["wat-string","getTime"]],["new","Date"]]],["result",["eval","expr","env"]]],["log",["+",["wat-string","time "],"expr",["wat-string",": "],["-",[["js-invoker",["wat-string","getTime"]],["new","Date"]],"n"],["wat-string","ms"]]],"result"]],["define-operative",["assert-true","expr"],"env",["unless",["===",true,["eval","expr","env"]],["error",["+",["wat-string","Should be true: "],"expr"]]]],["define-operative",["assert-false","expr"],"env",["unless",["===",false,["eval","expr","env"]],["error",["+",["wat-string","Should be false: "],"expr"]]]],["define-operative",["assert-===","expected","expr2"],"env",["let",[["res",["eval","expr2","env"]],["exp",["eval","expected","env"]]],["unless",["===","exp","res"],["error",["+","expr2",["wat-string"," should be "],"exp",["wat-string"," but is "],"res"]]]]],["define-operative",["assert-==","expected","expr2"],"env",["let",[["res",["eval","expr2","env"]],["exp",["eval","expected","env"]]],["unless",["==","exp","res"],["error",["+","expr2",["wat-string"," should be "],"exp",["wat-string"," but is "],"res"]]]]],["define-operative",["assert-throws","expr"],"env",["label","return",["catch",["eval","expr","env"],["lambda",["exc"],["return"]]],["error",["+",["wat-string","Should throw: "],"expr"]]]],["define-prototype","Option","Object",[]],["define-prototype","Some","Option",["value"]],["define-prototype","None","Option",[]],["define",["some","value"],["new","Some","value"]],["define","none",["new","None"]],["define-operative",["if-option",["option-name","option-expr"],"then","else"],"env",["let",[["option",["the","Option",["eval","option-expr","env"]]]],["if",["type?","option","Some"],["eval",["list",["list","lambda",["list","option-name"],"then"],[["js-getter",["wat-string","value"]],"option"]],"env"],["eval","else","env"]]]],["define",["print-stacktrace","err"],["define",["print-frame","k"],["log",[["js-invoker",["wat-string","toString"]],[["js-getter",["wat-string","fun"]],"k"]],[["js-getter",["wat-string","dbg"]],"k"],[["js-getter",["wat-string","e"]],"k"]],["when",["type?",[["js-getter",["wat-string","next"]],"k"],["js-global",["wat-string","StackFrame"]]],["print-frame",[["js-getter",["wat-string","next"]],"k"]]]],["take-subcont","vm-root-prompt","k",["log","err"],["log","k"],["push-prompt","vm-root-prompt",["push-subcont","k"]]]],["define",["user-break","err"],["throw","err"]]]
 
 },{}],2:[function(require,module,exports){
 module.exports = {
@@ -627,6 +627,7 @@ var id_stx = action(
 	function (str) {
 		if (str.length == 1) return str
 		switch (str[0]) {
+			//case ".": return str.length == 1 ? str : ["js-getter", ["wat-string", str.substring(1)]]
 			case ".": return ["js-getter", ["wat-string", str.substring(1)]]
 			case "@": return ["js-invoker", ["wat-string", str.substring(1)]]
 			case "&": return ["js-global", ["wat-string", str.substring(1)]]
@@ -691,6 +692,8 @@ var program_stx = repeat0(x_stx)
 // Qua VM by Manuel Simoni (msimoni@gmail.com)
 module.exports = function Qua() {
 	
+	var trace = false
+	
 	/* Continuations */
 	function StackFrame(fun, next, dbg, e) { this.fun = fun; this.next = next; this.dbg = dbg; this.e = e }
 
@@ -704,16 +707,6 @@ module.exports = function Qua() {
 		suspension.k = new StackFrame(fun, suspension.k, dbg, e)
 		return suspension
 	}
-
-	function monadic(m, a, b) {
-		if (!isResumption(m))
-			var res = a()
-		else
-			var res = resumeFrame(m)
-		if (!isSuspension(res))
-			return b(res)
-		return suspendFrame(res, function(m) { return monadic(m, a, b) })
-	}
 	
 	/* Forms */
 	function Nil() { }; var NIL = new Nil()
@@ -721,8 +714,9 @@ module.exports = function Qua() {
 	
 	/* Evaluation Core */
 	function evaluate(m, e, x) {
-		 if (!x || !x.wat_eval) return x
-		 return x.wat_eval(m, e)
+		if (trace) print("eval:", x)
+		if (!x || !x.wat_eval) return x
+		return x.wat_eval(m, e)
 	}
 	function Sym(name) { this.name = name }
 	function sym(name) { return new Sym(name) }
@@ -731,12 +725,8 @@ module.exports = function Qua() {
 
 	function Cons(car, cdr) { this.car = car; this.cdr = cdr }
 	Cons.prototype.wat_eval = function(m, e) {
-		var that = this
-		return monadic(
-			null,
-			function() { return evaluate(null, e, car(that)) },
-			function(op) { return combine(null, e, op, cdr(that)) }
-		)
+		var op = isResumption(m) ? resumeFrame(m) : evaluate(null, e, this.car)
+		return isSuspension(op) ? suspendFrame(op, m=> this.wat_eval(m, e)) : combine(null, e, op, this.cdr)
 	}
 	function cons(car, cdr) { return new Cons(car, cdr) }
 	function car(cons) { // tc
@@ -745,48 +735,36 @@ module.exports = function Qua() {
 	function cdr(cons) { // tc
 		return cons instanceof Cons ? cons.cdr : error("not a cons: " + to_string(cons))
 	}
-	function elt(cons, i) { return i === 0 ? car(cons) : elt(cdr(cons), i - 1) }
+	function elt(o, i) { for (; i>0; i-=1) o=cdr(o); return car(o); }
+	function len(o) { for (var i=0; o instanceof Cons; o=cdr(o)) i+=1; return i; }
 	
 	/* Operative & Applicative Combiners */
 	function combine(m, e, cmb, o) {
-		if (cmb && cmb.wat_combine)
-			return cmb.wat_combine(m, e, o)
+		if (trace) print("combine:", cons(cmb, o))
+		if (cmb && cmb.wat_combine)	return cmb.wat_combine(m, e, o)
+		// TODO per default le Function non wrapped dovrebbero essere operative e non applicative
 		if (cmb instanceof Function)
-			return jswrap(cmb).wat_combine(m, e, o)
-		return error("not a combiner: " + to_string(cmb))
+			return jswrap(cmb).wat_combine(m, e, o) // Function x default applicative
+			//	 return Apv.prototype.wat_combine.call(new JSFun(cmb), m, e, o) 
+			//   return new JSFun(cmb).wat_combine(m, e, o) // Function x default operative
+			//   return jsfun(cmb).wat_combine(m, e, o)
+			//   return cmb.apply(null, list_to_array(o))
+		return error("not a combiner: " + to_string(cmb) + " in: " + cons(cmb, o))
 	}
 	function Opv(p, ep, x, e) { this.p = p; this.ep = ep; this.x = x; this.e = e }
 	Opv.prototype.wat_combine = function(m, e, o) {
-		var that = this
-		var xe = env(that.e)
-		return monadic(
-			null,
-			function() { return bind(xe, that.p, o) },
-			function() {
-				return monadic(
-					null,
-					function() { return bind(xe, that.ep, e) },
-					function() { return evaluate(null, xe, that.x) }
-				)
-			}
-		)
+		var xe = env(this.e)
+		bind(xe, this.p, o, this); bind(xe, this.ep, e, this); return evaluate(null, xe, this.x)
 	}
 	function Apv(cmb) { this.cmb = cmb }
 	Apv.prototype.wat_combine = function(m, e, o) {
-		var that = this
-		return monadic(
-			null,
-			function() { return evalArgs(null, e, o, NIL) },
-			function(args) { return that.cmb.wat_combine(null, e, args) }
-		)
-		function evalArgs(m, e, todo, done) {
-			if (todo === NIL) return reverse_list(done) 
-			return monadic(
-				null,
-				function() { return evaluate(null, e, car(todo)) },
-				function(arg) { return evalArgs(null, e, cdr(todo), cons(arg, done)) }
-			)
-		}
+		var args = isResumption(m) ? resumeFrame(m) : evalArgs(null, e, o, NIL)
+		return isSuspension(args) ? suspendFrame(args, m=> this.wat_combine(m, e, o)) : this.cmb.wat_combine(null, e, args)
+	}
+	function evalArgs(m, e, todo, done) {
+		if (todo === NIL) return reverse_list(done) 
+		var arg = isResumption(m) ? resumeFrame(m) : evaluate(null, e, car(todo))
+		return isSuspension(arg) ? suspendFrame(arg, m=> evalArgs(m, e, todo, done)) : evalArgs(null, e, cdr(todo), cons(arg, done))
 	}
 	function wrap(cmb) { return cmb && cmb.wat_combine ? new Apv(cmb) : error("cannot wrap: " + cmb) } // type check
 	function unwrap(apv) { return apv instanceof Apv ? apv.cmb : error("cannot unwrap: " + apv) } // type check
@@ -795,37 +773,36 @@ module.exports = function Qua() {
 	function Vau() { }; function Def() { }; function Eval() { }
 	Vau.prototype.wat_combine = function(m, e, o) {
 		// o = (ptree envp expr)
+		if (len(o) > 3) return error("too many operands in: " + cons(this, o));
 		var ptree = elt(o, 0)
-		var err = pcheck(ptree); if (err) return err
-		// envp deve essere un symbol non in ptree
 		var envp = elt(o, 1)
-		var err = pcheck(ptree, envp); if (err) return err
+		var msg = pcheck(ptree, envp); if (msg) return error(msg + " of: " + cons(this, o))
 		return new Opv(ptree, envp, elt(o, 2), e)
 	}
 	Def.prototype.wat_combine = function(m, e, o) { // error handling
-		var lhs = elt(o, 0);
-		var err = pcheck(lhs); if (err) return err
+		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
+		var ptree = elt(o, 0) // almeno un parametro, singolo o nel parameters tree insieme ad #ignore
+		if (!(ptree instanceof Sym)) {
+			if (!(ptree instanceof Cons)) return error("not a symbol: " + ptree + " in: " + cons(this, o)) 
+			var msg = pcheck(ptree); if (msg) return error(msg + " of: " + cons(this, o))
+		}
 		var rhs = elt(o, 1)
-		return monadic(
-			null,
-			function() { return evaluate(null, e, rhs) },
-			function(val) { return bind(e, lhs, val) }
-		)
+		var val = isResumption(m) ? resumeFrame(m) : evaluate(null, e, rhs)
+		return isSuspension(val) ? suspendFrame(val, m=> this.wat_combine(m, e, o)) : bind(e, ptree, val, cons(this, o))
 	}
-	function pcheck(p, ep) {
-		if (ep && ep != IGN && !(ep instanceof Sym)) return error("envp not #ignore or symbol: " + ep);
-		return pcheck(p)
-		function pcheck(x) {
-			if (x === NIL || x == IGN) return
-			if (x instanceof Sym) {
-				if (ep && ep instanceof Sym && ep.name === x.name) error("envp not a unique symbol: " + ep)
-				return 
-			}
-			if (x instanceof Cons) {
-				 var err = pcheck(car(x)); if (err) return err
-				 return pcheck(cdr(x))
-			}
-			return error("not a symbol: " + to_string(x) + " in: " + p)
+	function pcheck(ptree, envp) {
+		var symbols = new Set()
+		if (ptree != NIL && ptree != IGN) {	var msg = pcheck(ptree); if (msg) return msg }
+		if (!envp) return symbols.size > 0 ? null : "no one symbol in: " + ptree
+		if (envp == IGN) return null
+		if (!(envp instanceof Sym)) return "not a #ignore or symbol: " + envp
+		return !symbols.has(envp.name) ? null : "not a unique symbol: " + envp
+		function pcheck(p) {
+			if (p == IGN) return null
+			if (p instanceof Sym) return !symbols.has(p.name) ? (symbols.add(p.name), null) : "not a unique symbol: " + p + (p == ptree ? "" : " in: " + ptree)
+			if (!(p instanceof Cons)) return "not a #ignore or symbol: " + p + (p == ptree ? "" : " in: " + ptree) 
+			var msg = pcheck(p.car); if (msg) return msg
+			return p.cdr == NIL ? null : pcheck(p.cdr)
 		}
 	}
 	Eval.prototype.wat_combine = function(m, e, o) { // error handling
@@ -839,29 +816,21 @@ module.exports = function Qua() {
 	Begin.prototype.wat_combine = function(m, e, o) {
 		return o === NIL ? null : begin(m, e, o)
 		function begin(m, e, xs) {
-			return monadic(
-				null,
-				function() { return evaluate(null, e, car(xs)) },
-				function(res) {
-					var kdr = cdr(xs)
-					return kdr === NIL ? res : begin(null, e, kdr)
-				}
-			)
+			var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, car(xs))
+			return isSuspension(res) ? suspendFrame(res, m=> begin(m, e, xs)) : (kdr=> kdr === NIL ? res : begin(null, e, kdr))(cdr(xs))
 		}
 	}
 	If.prototype.wat_combine = function(m, e, o) {
-		return monadic(
-			null,
-			function() { return evaluate(null, e, elt(o, 0)) },
-			function(test) { return evaluate(null, e, test ? elt(o, 1) : elt(o, 2)) }
-		)
+		if (len(o) > 3) return error("too many operands in: " + cons(this, o));
+		var test = isResumption(m) ? resumeFrame(m) : evaluate(null, e, elt(o, 0))
+		return isSuspension(test) ? suspendFrame(test, m=> this.wat_combine(m, e, o)) : evaluate(null, e, test ? elt(o, 1) : elt(o, 2))
 	}
 	Loop.prototype.wat_combine = function self(m, e, o) {
 		var first = true // only resume once
 		while (true) {
 			var res = first && isResumption(m) ? resumeFrame(m) : evaluate(null, e, elt(o, 0))
 			first = false
-			if (isSuspension(res)) return suspendFrame(res, function(m) { return self(m, e, o) }, elt(o, 0), e)
+			if (isSuspension(res)) return suspendFrame(res, m=> self(m, e, o), elt(o, 0), e)
 		}
 	}
 	Catch.prototype.wat_combine = function self(m, e, o) {
@@ -874,7 +843,7 @@ module.exports = function Qua() {
 			// unwrap handler to prevent eval if exc is sym or cons
 			var res = combine(null, e, unwrap(handler), list(exc))
 		}
-		if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
+		if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), x, e)
 		return res
 	}
 	Finally.prototype.wat_combine = function self(m, e, o) {
@@ -882,14 +851,14 @@ module.exports = function Qua() {
 		var cleanup = elt(o, 1)
 		try {
 			var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, prot)
-			if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, prot, e)
+			if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), prot, e)
 		}
 		finally {
 			return isSuspension(res) ? res : doCleanup(null, e, cleanup, res)
 		}
 		function doCleanup(m, e, cleanup, res) {
 			var fres = isResumption(m) ? resumeFrame(m) : evaluate(null, e, cleanup)
-			if (isSuspension(fres)) suspendFrame(fres, function(m) { return doCleanup(m, e, cleanup, res) }, cleanup, e)
+			if (isSuspension(fres)) suspendFrame(fres, m=> doCleanup(m, e, cleanup, res), cleanup, e)
 			return fres
 		}
 	}
@@ -901,7 +870,7 @@ module.exports = function Qua() {
 		var x = elt(o, 1)
 		var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, x)	
 		if (!isSuspension(res)) return res
-		if (res.prompt !== prompt) return suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
+		if (res.prompt !== prompt) return suspendFrame(res, m=> self(m, e, o), x, e)
 		var continuation = res.k
 		var handler = res.handler
 		return combine(null, e, handler, cons(continuation, NIL))
@@ -910,13 +879,13 @@ module.exports = function Qua() {
 		var prompt = elt(o, 0)
 		var handler = elt(o, 1)
 		var cap = new Suspension(prompt, handler)
-		return suspendFrame(cap, function(m) { return combine(null, e, m.f, NIL) }, this, e)
+		return suspendFrame(cap, m=> combine(null, e, m.f, NIL), this, e)
 	}
 	PushSubcont.prototype.wat_combine = function self(m, e, o) {
 		var thek = elt(o, 0)
 		var thef = elt(o, 1)
 		var res = isResumption(m) ? resumeFrame(m) : resumeFrame(new Resumption(thek, thef))
-		if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, thef, e)
+		if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), thef, e)
 		return res
 	}
 	PushPromptSubcont.prototype.wat_combine = function self(m, e, o) {
@@ -925,7 +894,7 @@ module.exports = function Qua() {
 		var thef = elt(o, 2)
 		var res = isResumption(m) ? resumeFrame(m) : resumeFrame(new Resumption(thek, thef))
 		if (!isSuspension(res)) return res
-		if (res.prompt !== prompt) return suspendFrame(res, function(m) { return self(m, e, o) }, thef, e)
+		if (res.prompt !== prompt) return suspendFrame(res, m=> self(m, e, o), thef, e)
 		var continuation = res.k
 		var handler = res.handler
 		return combine(null, e, handler, cons(continuation, NIL))
@@ -943,7 +912,7 @@ module.exports = function Qua() {
 		try {
 			dv.val = val
 			var res = isResumption(m) ? resumeFrame(m) : evaluate(null, e, x)
-			if (isSuspension(res)) suspendFrame(res, function(m) { return self(m, e, o) }, x, e)
+			if (isSuspension(res)) suspendFrame(res, m=> self(m, e, o), x, e)
 			return res
 		}
 		finally {
@@ -954,24 +923,31 @@ module.exports = function Qua() {
 	/* Environment */
 	function Env(parent) { this.bindings = Object.create(!parent ? null : parent.bindings); this.parent = parent }
 	function env(parent) { return new Env(parent) }
-	function lookup(e, name) { return name in e.bindings ? e.bindings[name] : error("unbound: " + name) }
-	
-	function bind(e, lhs, rhs) {
-		if (lhs.wat_match)
-			return lhs.wat_match(e, rhs)
-		return error("cannot match against: " + lhs)
+	function lookup(e, name) {
+		if (!(name in e.bindings)) error("unbound: " + name)
+		if (trace) print("lookup:", name)
+		return e.bindings[name]
 	}
-	Sym.prototype.wat_match = function(e, rhs) { return e.bindings[this.name] = rhs }
+	
+	/* Bind */
+	function bind(e, lhs, rhs, exp) {
+		if (!lhs.wat_match) return error("cannot match against: " + lhs)
+		try {
+			var msg = lhs.wat_match(e, rhs);
+		}
+		catch (e) { // error in car() or cdr()
+			var msg = "insufficient arguments" 
+		}
+		return !msg ? IGN : error(msg + " in bind: " + lhs + (!exp? '' : " of: " + exp) + " with: " + rhs)
+	}
+	Sym.prototype.wat_match = function(e, rhs) { e.bindings[this.name] = rhs; if (trace) print("bind:", this.name, rhs, e); }
 	Cons.prototype.wat_match = function(e, rhs) {
-		var that = this
-		return monadic(
-			null,
-			function() { return that.car.wat_match(e, car(rhs)) },
-			function() { return that.cdr.wat_match(e, cdr(rhs)) }
-		)
+		if (!this.car.wat_match) return "cannot match against: " + this.car
+		if (!this.cdr.wat_match) return "cannot match against: " + this.cdr 
+		this.car.wat_match(e, car(rhs)); return this.cdr.wat_match(e, cdr(rhs));
 	}
 	Nil.prototype.wat_match = function(e, rhs) {
-		if (rhs !== NIL) return error("NIL expected, but got: " + to_string(rhs))
+		if (rhs !== NIL) return "too many arguments" //+ ", NIL expected, but got: " + to_string(rhs)
 	}
 	Ign.prototype.wat_match = function(e, rhs) { }
 	
@@ -987,17 +963,15 @@ module.exports = function Qua() {
 	
 	/* Utilities */
 	function list() {
-		return array_to_list(Array.prototype.slice.call(arguments))
+		return array_to_list(true, arguments)
 	}
 	function list_star() {
-		var len = arguments.length
-		var c = len >= 1 ? arguments[len - 1] : NIL
-		for (var i = len - 1; i > 0; i--) c = cons(arguments[i - 1], c)
-		return c
+		return array_to_list(false, arguments)
 	}
-	function array_to_list(array, end) {
-		var c = end ? end : NIL
-		for (var i = array.length; i > 0; i--) c = cons(array[i - 1], c)
+	function array_to_list(b, args) {
+		var len = args.length-1
+		var c = b || len < 0 ? NIL : args[len]
+		for (var i=len-(b?0:1); i>=0; i-=1) c = cons(args[i], c)
 		return c
 	}
 	function list_to_array(c) {
@@ -1005,6 +979,25 @@ module.exports = function Qua() {
 	}
 	function reverse_list(list) {
 		for (var res = NIL; list !== NIL; list = cdr(list)) res = cons(car(list), res); return res
+	}
+	function print() {
+		console.log(to_string(... arguments))
+		return arguments[arguments.length - 1]
+	}
+	function eq(a, b) {
+		if (a instanceof Cons && b instanceof Cons) return eq(a.car, b.car) && eq(a.cdr, b.cdr)
+		if (a instanceof Sym && b instanceof Sym) return a.name === b.name
+		return a === b 
+	}
+	function assert(a, b) {
+		try {
+			var v = evaluate(null, env(the_environment), a)
+			if (arguments.length == 1) print(a, "should be throw but is", v)
+			else if (!eq(v, b)) print(a, "should be", b, "but is", v);
+		}
+		catch (t) {
+			if (arguments.length > 1) print(a, "throw", t);
+		}
 	}
 	
 	/* Bytecode parser */
@@ -1015,43 +1008,41 @@ module.exports = function Qua() {
 			default: return obj
 		}
 		function parse_bytecode_array(arr) {
+			if (arr.length == 0) return NIL
 			if (arr.length == 2 && arr[0] === "wat-string") return arr[1]
-			var i = arr.indexOf(".")
-			if (i === -1) return array_to_list(arr.map(parse_bytecode))
-			var front = arr.slice(0, i)
-			return array_to_list(front.map(parse_bytecode), parse_bytecode(arr[i + 1]))
+			var head = cons(parse_bytecode(arr[0]), NIL), c = head
+			for (var i=1; i<arr.length; i+=1) {
+				if (arr[i] !== ".") { c = c.cdr = cons(parse_bytecode(arr[i]), NIL); continue }
+				if (i != arr.length-2) throw error(". not is the penultimate element in " + arr)
+				c.cdr = parse_bytecode(arr[i+1])
+				return head
+			}
+			return head
 		}
 	}
 	
 	/* JSNI */
+	function JSFun(fun) { this.fun = fun }
+	function jsfun(fun) { return Object.prototype.toString.call(fun) === "[object Function]" ? new JSFun(fun) : error("no fun") }
+	JSFun.prototype.wat_combine = function(m, e, o) { return this.fun.apply(null, list_to_array(o))	}
+	function jswrap(fun) { return wrap(jsfun(fun)) }
+	
 	var js_types = ["Array", "Boolean", "Date", "Function", "Number", "Object", "RegExp", "String"]
 	function is_type(obj, type_obj, type_name) {
 		if (!type_obj) return error("type is undefined")
 		if (js_types.indexOf(type_name) === -1) return obj instanceof type_obj
 		return toString.call(obj) === "[object " + type_name + "]"
 	}
-	function JSFun(jsfun) {
-		if (Object.prototype.toString.call(jsfun) !== "[object Function]") return error("no fun")
-		this.jsfun = jsfun
-	}
-	JSFun.prototype.wat_combine = function(m, e, o) { 
-		return this.jsfun.apply(null, list_to_array(o))
-	}
-	function jswrap(jsfun) { return wrap(new JSFun(jsfun)) }
 	function js_unop(op) { return jswrap(new Function("a", "return (" + op + " a)")) }
 	function js_binop(op) { return jswrap(new Function("a", "b", "return (a " + op + " b)")) }
 	function js_invoker(method_name) {
+		if (!method_name) return error("method name is null/undefined")
 		return jswrap(
 			function(rcv) {
-				if (arguments.length < 1)
-					return error("invoker called with wrong args: " + arguments)
-				if (!method_name)
-					return error("method name is null/undefined")
-				if (!rcv) 
-					return error("receiver is null/undefined")
+				if (!rcv) return error("receiver is null/undefined")
+				if (arguments.length < 1) return error("invoker called with wrong args: " + arguments)
 				var method = rcv[method_name]
-				if (!method)
-					return error("method not found: " + method_name + " in: " + to_string(rcv))
+				if (!method) return error("method not found: " + method_name + " in: " + to_string(rcv))
 				return method.apply(rcv, Array.prototype.slice.call(arguments, 1))
 			}
 		)
@@ -1079,9 +1070,7 @@ module.exports = function Qua() {
 	function make_prototype(name) {
 		var prop_names = Array.prototype.slice.call(arguments, 1)
 		var param_names = prop_names.join(",")
-		var param_inits = prop_names.map(
-				function(prop_name) { return "this." + prop_name + "=" + prop_name + ";" }
-			).join("")
+		var param_inits = prop_names.map(prop_name=> "this." + prop_name + "=" + prop_name + ";").join("")
 		return eval("(function " + name + "(" + param_names + "){" + param_inits + "})")
 	}
 	function jsnew(ctor) {
@@ -1094,28 +1083,56 @@ module.exports = function Qua() {
 			return combine(null, null, cmb, args)
 		}
 	}
-	var JS_GLOBAL = jswrap(function(name) { return eval(name) })
-	JS_GLOBAL.wat_setter = jswrap(function(new_val, name) { global[name] = new_val })
+	var JS_GLOBAL = jswrap(name=> global[name])
+	JS_GLOBAL.wat_setter = jswrap((new_val, name)=> global[name] = new_val)
 	
 	/* Setter - you are not expected to understand this - immediately */
-	var SETTER = jswrap(function setter(obj) { return obj.wat_setter })
-	SETTER.wat_setter = jswrap(function(new_setter, obj) { obj.wat_setter = new_setter })
+	var SETTER = jswrap(obj=> obj.wat_setter)
+	SETTER.wat_setter = jswrap((new_setter, obj)=> obj.wat_setter = new_setter)
 	
 	/* Stringification */
-	function to_string(obj) {
-		if (toString.call(obj) === "[object String]") return JSON.stringify(obj)
-		if (obj !== null && obj !== undefined) return obj.toString()
-		return Object.prototype.toString.call(obj)
+	function to_string() {
+		var s=''; for (let arg of arguments) s += (!s?'':' ') + to_string(arg); return s
+		/* TODO sostituito dal seguente
+		function to_string(obj) {
+			if (toString.call(obj) === "[object String]") return obj //JSON.stringify(obj)
+			if (obj !== null && obj !== undefined) return obj.toString()
+			if (obj !== null) return "#null"
+			if (obj !== undefined) return "#undefined"
+			return Object.prototype.toString.call(obj)
+		}
+		*/
+		function to_string(obj) {
+			if (obj === null) return "#null"
+			if (obj === undefined) return "#undefined"
+			if (toString.call(obj) === "[object String]") return obj //JSON.stringify(obj) // con o senza apici?
+			return obj.toString() // Object.prototype.toString.call(obj)
+		}
 	}
 	Nil.prototype.toString = function() { return "()" }
 	Ign.prototype.toString = function() { return "#ignore" }
 	Sym.prototype.toString = function() { return this.name }
 	Cons.prototype.toString = function() { return "(" + cons_to_string(this) + ")"
+		/* TODO sostituito dal seguente
 		function cons_to_string(c) {
 			if (cdr(c) === NIL) return to_string(car(c))
 			if (cdr(c) instanceof Cons) return to_string(car(c)) + " " + cons_to_string(cdr(c))
 			return to_string(car(c)) + " . " + to_string(cdr(c))
 		}
+		*/
+		function cons_to_string(c) {
+			if (c.cdr === NIL) return to_string(c.car)
+			if (c.cdr instanceof Cons) return to_string(c.car) + " " + cons_to_string(c.cdr)
+			return to_string(c.car) + " . " + to_string(c.cdr)
+		}
+	}
+	Env.prototype.toString = function() {
+		if (this == the_environment)
+			var s = 'The-Environment'
+		else {	
+		 	var s=''; for (let n in Object.getOwnPropertyNames(this.bindings)) s+= (!s?'':' ') + n + "=" + this.bindings[n];
+		}
+		return "[Env" + (!s?'':', '+s) + (!this.parent?'':' '+this.parent.toString()) + "]"
 	}
 	Apv.prototype.toString = function() { return "[Apv " + to_string(this.cmb) + "]" }
 	Opv.prototype.toString = function() { return "[Opv " + to_string(this.p) + " " + to_string(this.ep) + " " + to_string(this.x) + "]" }
@@ -1134,26 +1151,27 @@ module.exports = function Qua() {
 	TakeSubcont.prototype.toString = function() { return "vm-take-subcont" }
 	PushSubcont.prototype.toString = function() { return "vm-push-subcont" }
 	PushPromptSubcont.prototype.toString = function() { return "vm-push-prompt-subcont" }
-	JSFun.prototype.toString = function() { return "[JSFun " + this.jsfun.toString() + "]" }
+	JSFun.prototype.toString = function() { return "[JSFun " + this.fun + "]" }
+	StackFrame.prototype.toString = function() { return "[StackFrame " + this.fun + " " + this.dbg + " " + this.e + "]" }
+	Resumption.prototype.toString = function() { return "[Resumption " + this.f + " " + this.k + "]" }
+	Suspension.prototype.toString = function() { return "[Suspension " + this.prompt + " " + this.handler + " " + this.k +  "]" }
+	
 	
 	/* Bootstrap */
-	var the_environment = env()
-	bind(the_environment, sym("vm-def"), new Def())
-	bind(the_environment, sym("vm-begin"), new Begin())
 	var builtin_bytecode =
 		["vm-begin",
 			// Basics
 			["vm-def", "vm-vau", new Vau()],
 			["vm-def", "vm-eval", wrap(new Eval())],
-			["vm-def", "vm-make-environment", jswrap(function(parent) { return env(parent) })],
+			["vm-def", "vm-make-environment", jswrap(parent=> env(parent))],
 			["vm-def", "vm-wrap", jswrap(wrap)],
 			["vm-def", "vm-unwrap", jswrap(unwrap)],
 			// Values
 			["vm-def", "vm-cons", jswrap(cons)],
-			["vm-def", "vm-cons?", jswrap(function(obj) { return obj instanceof Cons })],
-			["vm-def", "vm-nil?", jswrap(function(obj) { return obj === NIL })],
+			["vm-def", "vm-cons?", jswrap(obj=> obj instanceof Cons)],
+			["vm-def", "vm-nil?", jswrap(obj=> obj === NIL)],
 			["vm-def", "vm-string-to-symbol", jswrap(sym)],
-			["vm-def", "vm-symbol?", jswrap(function(obj) { return obj instanceof Sym })],
+			["vm-def", "vm-symbol?", jswrap(obj=> obj instanceof Sym)],
 			["vm-def", "vm-symbol-name", jswrap(sym_name)],
 			// First-order Control
 			["vm-def", "vm-if", new If()],
@@ -1170,8 +1188,6 @@ module.exports = function Qua() {
 			["vm-def", "vm-dnew", wrap(new DNew())],
 			["vm-def", "vm-dlet", new DLet()],
 			["vm-def", "vm-dref", wrap(new DRef())],
-			// Setters
-			["vm-def", "vm-setter", SETTER],
 			// Errors
 			["vm-def", "vm-root-prompt", ROOT_PROMPT],
 			["vm-def", "vm-error", jswrap(error)],
@@ -1188,45 +1204,56 @@ module.exports = function Qua() {
 			["vm-def", "vm-js-make-prototype", jswrap(make_prototype)],
 			["vm-def", "vm-js-new", jswrap(jsnew)],
 			["vm-def", "vm-type?", jswrap(is_type)],
+			// Setters
+			["vm-def", "vm-setter", SETTER],
 			// Utilities
+			["vm-def", "vm-list", jswrap(list)],
+			["vm-def", "vm-list*", jswrap(list_star)],
 			["vm-def", "vm-list-to-array", jswrap(list_to_array)],
 			["vm-def", "vm-array-to-list", jswrap(array_to_list)],
 			["vm-def", "vm-reverse-list", jswrap(reverse_list)],
-			["vm-def", "vm-list*", jswrap(list_star)]
+			["vm-def", "==", jswrap((a,b)=> a == b)],
+			["vm-def", "eq", jswrap((a,b)=> eq(a,b))],
+			["vm-def", "to-string", jswrap(to_string)],
+			["vm-def", "assert", jsfun(assert)],
 		]
+	var the_environment = env()
+	bind(the_environment, sym("vm-def"), new Def())
+	bind(the_environment, sym("vm-begin"), new Begin())
 	evaluate(null, the_environment, parse_bytecode(builtin_bytecode))
 	
 	/* API */
 	this.exec = function(bytecode) {
-		var wrapped = push_root_prompt(parse_bytecode([new Begin()].concat(bytecode)))
+		var wrapped = push_root_prompt(cons(new Begin(), parse_bytecode(bytecode)))
 		var res = evaluate(null, the_environment, wrapped)
 		if (isSuspension(res)) throw "prompt not found: " + res.prompt
 		return res
 	}
 	this.call = function(fun_name) {
-		return this.exec(parse_bytecode([fun_name].concat(Array.prototype.slice.call(arguments, 1))))
+		return this.exec(list(sym(fun_name), parse_bytecode(Array.prototype.slice.call(arguments, 1))))
 	}
 	this.get = function(var_name) {
-		return this.exec(parse_bytecode(var_name))
+		return this.exec(sym(var_name))
 	}
 }
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],5:[function(require,module,exports){
-var VM = require("./vm.js");
-var boot_bytecode = require("./build/boot.js").main;
-var parser = require("./parser.js");
-var vm = new VM();
-vm.exec(boot_bytecode);
+var VM = require("./vm.js")
+var boot_bytecode = require("./build/boot.js").main
+var parser = require("./parser.js")
+//var boot_bytecode = parser.parse_sexp(require('fs').readFileSync('./boot.wat', 'utf8'))
+
+var vm = new VM()
+vm.exec(boot_bytecode)
 
 module.exports.vm = function() {
     return {
         eval: function(sexp) {
 			var e = parser.parse_sexp(sexp)
 			//console.log(vm.e)
-			return vm.exec(e);
-        },
-        parse_bytecode: vm.parse_bytecode
+			return vm.exec(e)
+        }
     };
 };
 
