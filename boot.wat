@@ -300,8 +300,7 @@
   (let ((binop (vm-js-binop name)))
     (letrec ((op (lambda (arg1 arg2 . rest)
                    (if (binop arg1 arg2)
-                       (if (nil? rest)
-                           #t
+                       (if (nil? rest) #t
                            (apply op (list* arg2 rest)))
                        #f))))
       op)))
@@ -325,8 +324,7 @@
 (define +
   (let ((vm+ (vm-js-binop "+")))
 	(lambda args
-	  (if (nil? args)
-	      0
+	  (if (nil? args) 0
 	      (fold-list vm+ (car args) (cdr args)) ))))
 
 (define (negative-op binop unit)

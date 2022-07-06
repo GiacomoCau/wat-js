@@ -43,7 +43,7 @@
 
 (define (new-prompt) (list #null))
 
-(define (abortP p e)
+(define (abort-prompt p e)
   (take-subcont p #ignore e))
 
 (test-check 'test2
@@ -54,21 +54,21 @@
 
 (test-check 'test3
   (let ((p (new-prompt)))
-    (+ (push-prompt p (+ (abortP p 5) 6))
+    (+ (push-prompt p (+ (abort-prompt p 5) 6))
       4))
   9)
 
 (test-check 'test3-1
   (let ((p (new-prompt)))
-    (+ (push-prompt p (push-prompt p (+ (abortP p 5) 6)))
+    (+ (push-prompt p (push-prompt p (+ (abort-prompt p 5) 6)))
       4))
   9)
 
 (test-check 'test3-2
   (let ((p (new-prompt)))
     (let ((v (push-prompt p
-	       (let* ((v1 (push-prompt p (+ (abortP p 5) 6)))
-		      (v1 (abortP p 7)))
+	       (let* ((v1 (push-prompt p (+ (abort-prompt p 5) 6)))
+		      (v1 (abort-prompt p 7)))
 		 (+ v1 10)))))
       (+ v 20)))
   27)
@@ -76,10 +76,10 @@
 '(test-check 'test3-3
   (let ((p (new-prompt)))
     (let ((v (push-prompt p (let*
-	    ((v1 (push-prompt p (+ (abortP p 5) 6)))
-		 (v1 (abortP p 7)) )
+	    ((v1 (push-prompt p (+ (abort-prompt p 5) 6)))
+		 (v1 (abort-prompt p 7)) )
 		(+ v1 10) ))))
-      (abortP p 9)
+      (abort-prompt p 9)
       (+ v 20) ))
   'must-be-error )
 ; give prompt not found: ([object Null])
@@ -87,8 +87,8 @@
 ;; (test-check 'test3-3-1
 ;;   (let ((p (new-prompt)))
 ;;     (let ((v (push-prompt p
-;; 	       (let* ((v1 (push-prompt p (+ (abortP p 5) 6)))
-;; 		      (v1 (abortP p 7)))
+;; 	       (let* ((v1 (push-prompt p (+ (abort-prompt p 5) 6)))
+;; 		      (v1 (abort-prompt p 7)))
 ;; 		 (+ v1 10)))))
 ;;       (prompt-set? p))) ; give unbound: prompt-set?
 ;;   #f)
