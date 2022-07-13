@@ -44,7 +44,7 @@ module.exports = function Qua() {
 
 	function Resumption(k, s) { this.k = k; this.s = s }
 	Resumption.prototype.toString = function() { return "[Resumption " + this.s + " " + this.k + "]" }
-	function isResumption(m) { return m instanceof Resumption }
+	function isResumption(m) { return m /*instanceof Resumption*/ }
 	function resumeFrame(m) { return m.k.f(new Resumption(m.k.next, m.s)) }
 
 	function Suspension(prompt, handler) { this.prompt = prompt; this.handler = handler; this.k = null	}
@@ -134,7 +134,7 @@ module.exports = function Qua() {
 		try {
 			var msg = lhs.wat_match(e, rhs);
 		}
-		catch (exc) { // error in car() or cdr()
+		catch (exc) { // only error in car() or cdr()
 			var msg = "insufficient arguments" // + " because " + exc.getMessage()
 		}
 		return !msg ? ign : error(msg + " in bind: " + lhs + (!exp ? "" : " of: " + exp) + " with: " + rhs)
@@ -594,6 +594,7 @@ module.exports = function Qua() {
 			["vm-def", "eq", jswrap((a,b)=> eq(a,b))],
 			["vm-def", "to-string", jswrap(to_string)],
 			["vm-def", "assert", jsfun(assert)],
+			["vm-def", "trace", jsfun(b=>trace=b)],
 		]
 	var the_environment = env()
 	bind(the_environment, sym("vm-def"), new Def())
