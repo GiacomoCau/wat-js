@@ -14,7 +14,7 @@ me le seguenti tornano tutte un Env con x=1, forse è ok!
 (let ((obj (object ("x" 1))))
   (set (.x obj) 2)
   (assert-equal 2 (.x obj))
-  (set (@ obj "x") 3) not a combiner: [object Undefined] in: (3 obj "x")
+  (set (@ obj "x") 3) ; give not a combiner: [object Undefined] in: (3 obj "x")
   (assert-equal 3 (.x obj)) )
 
 '(test-check 'test3-3

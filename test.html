@@ -1,0 +1,33 @@
+<html>
+<head>
+	<script type="text/javascript" src="./build/wat.js"></script>
+	<script>
+		var vm = wat.vm();
+		
+		function eval(input) {
+			var start_time = new Date().getTime()
+			var exp = input.value
+			try {
+				var value = vm.eval(exp) 
+				input.value = ""
+			}
+			catch(exc) {
+				var value = exc
+			}
+			var duration = new Date().getTime() - start_time
+			print("<br>> " + exp + "<br>" + value + "<br>(" + duration + " ms)")
+		}
+		
+		function print(string) {
+		    var div = document.createElement("div")
+		    div.innerHTML = string  
+		    output.insertBefore(div, output.firstChild)
+		}
+	</script>
+</head>
+<body>
+	<textarea id="input" rows="4" cols="70" spellcheck=false onkeydown="if (event.keyCode == 13) event.preventDefault(), eval(this)"></textarea>
+	<br><input type="button" value="eval" onclick="eval(input)">
+	<div id="output"></div>
+</body>
+</html>
