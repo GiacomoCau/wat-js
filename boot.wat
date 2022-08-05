@@ -461,17 +461,18 @@
 
 (define (print-stacktrace err)
   (define (print-frame k)
-    (log (@toString (.fun k)) (.dbg k) (.e k)) ;; @toString di .dbg == undefined no buono
+    ;(log (@toString (.fun k)) (.dbg k) (.e k)) ;; @toString di .dbg == undefined no buono
+    (log "!!" k) ;; @toString di .dbg == undefined no buono!
     (when (type? (.next k) &StackFrame) ;; .next di !StackFrame no buono!
     	(print-frame (.next k)) ))
+  (log "prima")
   (take-subcont vm-root-prompt k
-  	(log err)
-  	(log k)
-    ;(print-frame k)
+  	(log "dentro")
+    (print-frame k)
     (push-prompt vm-root-prompt
       (push-subcont k) )))
 
 (define (user-break err)
-  ;(print-stacktrace err)
+  (when (stack) (print-stacktrace err))
   (throw err) )
 

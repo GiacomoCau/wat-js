@@ -1,10 +1,12 @@
+<!DOCTYPE html>
 <html>
 <head>
-	<script type="text/javascript" src="./build/wat.js"></script>
-	<script>
-		var vm = wat.vm();
-		
-		function eval(input) {
+	<script type=module>
+
+		import { Vm } from "./wat.js"
+		var vm = Vm()
+
+		globalThis.evalExpr = function (input) {
 			var start_time = new Date().getTime()
 			var exp = input.value
 			try {
@@ -17,7 +19,7 @@
 			var duration = new Date().getTime() - start_time
 			print("<br>> " + exp + "<br>" + value + "<br>(" + duration + " ms)")
 		}
-		
+
 		function print(string) {
 		    var div = document.createElement("div")
 		    div.innerHTML = string  
@@ -26,8 +28,10 @@
 	</script>
 </head>
 <body>
-	<textarea id="input" rows="4" cols="70" spellcheck=false onkeydown="if (event.keyCode == 13) event.preventDefault(), eval(this)"></textarea>
-	<br><input type="button" value="eval" onclick="eval(input)">
-	<div id="output"></div>
+	<textarea id="text" rows="4" cols="70" spellcheck=false
+		onkeydown="if (event.keyCode == 13) { event.preventDefault(); evalExpr(this) }"
+	></textarea>
+	<br><input type="button" value="eval" onclick="evalExpr(text)">
+	<div id="output" style="font-size:small;"></div>
 </body>
 </html>

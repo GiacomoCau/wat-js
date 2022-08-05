@@ -1,10 +1,27 @@
-var vm = require("./wat").vm();
+
+// nessun repl può importare package.json: type=module  
+
+//var vm = require('./wat.js').Vm() // solo se package.json: type=commonjs ma non accetta poi le import/export in wat.js, vm.js, ... 
+
+//import { XMLHttpRequest } from 'xmlhttprequest' // non serve
+//import { XMLHttpRequest } from 'xhr2' // idem come sopra!
+
+//import { Vm } from './wat.js' // con package.json: type=module 
+//var vm = new Vm() // ReferenceError: XMLHttpRequest is not defined
+
+//var wat = await import('./wat.js') // terza possibilità
+//var vm = wat.Vm() // ReferenceError: XMLHttpRequest is not defined
+
+//require('./jsparse.js')
+//require('./parser.js')
+//var vm = require('./vm.js').Qua()
+
 console.log(
 	//vm.parse_bytecode(
 		//["params","env-param",".","body"] // ok
 		//["params","env-param",".","()"] // ok
 	vm.eval(
-		require("fs").readFileSync("test.wat", "utf8") // solo con boot.wat e non con boot2.wat manca troppa roba
+		//require("fs").readFileSync("test.wat", "utf8") // solo con boot.wat e non con boot2.wat manca troppa roba
 		//`( ($lambda ((a . b) . c) b) '((1 . 2) . 3) )` 
 		//`($define ((a . b) . c) '((1 . 2) . 3) ) b` 
 		//'(log "logging" 1 2 3)'

@@ -1,17 +1,23 @@
-var VM = require("./vm.js")
-var boot_bytecode = require("./build/boot.js").main
-var parser = require("./parser.js")
-//var boot_bytecode = parser.parse_sexp(require('fs').readFileSync('./boot.wat', 'utf8'))
 
-var vm = new VM()
-vm.exec(boot_bytecode)
+import { Qua } from "./vm.js"
+import { parse_sexp } from "./parser.js"
+//import bootWat from "./boot.wat"
+export { Vm }
 
-module.exports.vm = function() {
+function Vm() {
+	var qua = new Qua()
+	qua.exec(parse_sexp(readFile("./boot.wat")))
+	//qua.exec(parse_sexp(bootWat))
     return {
-        eval: function(sexp) {
-			var e = parser.parse_sexp(sexp)
-			//console.log(vm.e)
-			return vm.exec(e)
+        eval: function(exp) {
+			return qua.exec(parse_sexp(exp))
         }
     };
 };
+
+function readFile(file) {
+    var request = new XMLHttpRequest();
+    request.open("get", file, false);
+    request.send();
+	return request.responseText
+}

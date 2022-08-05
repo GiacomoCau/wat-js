@@ -1,6 +1,6 @@
-module.exports.parse_sexp = parse_sexp;
 
-var { ps, choice, range, action, sequence, join, join_action, negate, repeat0, optional, repeat1, wsequence, whitespace, ch, butnot, expect, } = require("./jsparse.js")
+import { ps, choice, range, action, sequence, join_action, negate, repeat0, optional, repeat1, wsequence, whitespace, ch, butnot, expect, } from "./jsparse.js"
+export { parse_sexp }
 
 /* S-expr parser */
 function parse_sexp(s) {
@@ -62,20 +62,19 @@ var number_stx = action(
 
 function make_constant_stx(string, constant) { return action(string, function(ast) { return constant; }) }
 var nil_stx = make_constant_stx("()", [])
-var ign_stx = make_constant_stx("#ignore", "#ignore")
 var t_stx = make_constant_stx("#t", true)
 var f_stx = make_constant_stx("#f", false)
 var null_stx = make_constant_stx("#null", null)
-var undef_stx = make_constant_stx("#undefined", undefined)
+var inert_stx = make_constant_stx("#inert", "#inert")
+var ignore_stx = make_constant_stx("#ignore", "#ignore")
+var undefined_stx = make_constant_stx("#undefined", undefined)
 var qualified_stx = action(sequence(id_stx, ":", id_stx), function(ast) { return ["eval", ["quote", ast[2]], ast[0]] })
-var dot_stx = action(wsequence(".", x_stx), function(ast) { return ast[1] });
+var dot_stx = action(wsequence(".", x_stx), function(ast) { return ast[1] })
 var compound_stx = action(
 	wsequence( "(", repeat1(x_stx), optional(dot_stx), ")" ),
-	function(ast) {
-		return !ast[2] ? ast[1] : ast[1].concat( [".", ast[2]] );
-	}
+	function(ast) { return !ast[2] ? ast[1] : ast[1].concat( [".", ast[2]] ) }
 );
 var quote_stx = action(sequence("'", x_stx), function(ast) { return ["quote", ast[1]] })
 var cmt_stx = expect(sequence(";", repeat0(negate(line_terminator)), optional(line_terminator)))
-var x_stx = whitespace(choice(qualified_stx, ign_stx, nil_stx, t_stx, f_stx, null_stx, undef_stx, number_stx, quote_stx, compound_stx, id_stx, string_stx, cmt_stx))
+var x_stx = whitespace(choice(qualified_stx, inert_stx, ignore_stx, nil_stx, t_stx, f_stx, null_stx, undefined_stx, number_stx, quote_stx, compound_stx, id_stx, string_stx, cmt_stx))
 var program_stx = repeat0(x_stx)

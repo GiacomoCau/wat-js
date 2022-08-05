@@ -6,10 +6,9 @@ gives prompt not found
 with fix to print-stackframe now gives unbound: get-current-environment
 and if change to the-environment gives not a symbol: [Apv [Opv elts #ignore elts]] in: ([Apv [Opv elts #ignore elts]] . 1)
 me le seguenti tornano tutte un Env con x=1, forse è ok!
-(log (eval '(module (x) exports) (the-environment)))
+(log (eval (module (x) exports) (the-environment)))
 (log (eval (list* module '(x) exports) (the-environment)))
 (log (eval (list* module (list 'x) exports) (the-environment)))
-(log (eval (list* module '(list list x) exports) (get-current-environment)))
 
 (let ((obj (object ("x" 1))))
   (set (.x obj) 2)

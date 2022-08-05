@@ -1,6 +1,6 @@
-module.exports = {
-	ps, choice, range, action, sequence, join_action, negate, repeat0, optional, repeat1, wsequence, whitespace, ch, butnot, expect,
-} /* browserify adaptation for wat */
+export {
+	ps, choice, range, action, sequence, join_action, negate, repeat0, optional, repeat1, wsequence, whitespace, ch, butnot, expect
+}
 
 // Copyright (C) 2007 Chris Double.
 //
