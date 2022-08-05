@@ -1,27 +1,13 @@
 
-// nessun repl può importare package.json: type=module  
-
-//var vm = require('./wat.js').Vm() // solo se package.json: type=commonjs ma non accetta poi le import/export in wat.js, vm.js, ... 
-
-//import { XMLHttpRequest } from 'xmlhttprequest' // non serve
-//import { XMLHttpRequest } from 'xhr2' // idem come sopra!
-
-//import { Vm } from './wat.js' // con package.json: type=module 
-//var vm = new Vm() // ReferenceError: XMLHttpRequest is not defined
-
-//var wat = await import('./wat.js') // terza possibilità
-//var vm = wat.Vm() // ReferenceError: XMLHttpRequest is not defined
-
-//require('./jsparse.js')
-//require('./parser.js')
-//var vm = require('./vm.js').Qua()
-
+// ok with node 13.14 --harmony-top-level-await or greater
+import { Vm, readFile } from './wat.js' // con package.json: type=module 
+var vm = Vm()
 console.log(
 	//vm.parse_bytecode(
 		//["params","env-param",".","body"] // ok
 		//["params","env-param",".","()"] // ok
 	vm.eval(
-		//require("fs").readFileSync("test.wat", "utf8") // solo con boot.wat e non con boot2.wat manca troppa roba
+		readFile("./test.wat")
 		//`( ($lambda ((a . b) . c) b) '((1 . 2) . 3) )` 
 		//`($define ((a . b) . c) '((1 . 2) . 3) ) b` 
 		//'(log "logging" 1 2 3)'
@@ -41,7 +27,7 @@ console.log(
 		//".dbg"
 		//"(@log &console \"funzica\" \"?\")"
 		//"(log \"funzica\" \"?\")"
-		//"(take-subcont vm-root-prompt k (vm-type? k &StackFrame))"
+		//"(take-subcont %root-prompt k (%type? k &StackFrame))"
 		//"(nil? (cdr '(a)))"
 		//`(let ( ((a) (1)) ) a)`
 		//"(cadr '((1 . 2) (3 . 4)))"
@@ -64,16 +50,16 @@ console.log(
 		 `
 		//*/
 		//`(provide (n) ($define! n 0))` // ?
-		//"(vm-vau (a . 12) #ignore 0)"
+		//"(%vau (a . 12) #ignore 0)"
 		//"($vau (a . 12) #ignore 0)"
 		//"($lambda (a b . 12) 1)"
 		//"(lambda (a b . 12) 1)"
 		//"((lambda (a b . c) c) 1 2 3 4) "
-		//"(vm-def (a b 12) 1)"
-		//"(@toString ((vm-vau (a . b) #ignore (list* a a a b)) 1 2 3))"
+		//"(%def (a b 12) 1)"
+		//"(@toString ((%vau (a . b) #ignore (list* a a a b)) 1 2 3))"
 		//"((lambda #ignore 1) 2 3 4)"
 		//"(&setTimeout (.log &console) 0 \"funzica\")"
-		//"(vm-wrap 1)"
+		//"(%wrap 1)"
 		//"(apply (wrap 2) '(1) #ignore)"
 		//"(js-global \"console\")"
 		//"(js-global \"Math\")"
@@ -130,7 +116,7 @@ console.log(
 		`
 		//*/
 		//"(to-string (($vau (x 1) #ignore 1 2 3 4 5 x) 6))"
-		//"(assert (vm-def a))"
+		//"(assert (%def a))"
 		//"\"ok\""
 	)
 );

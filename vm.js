@@ -23,7 +23,7 @@
 	xe: extended environment
 	f: function
 	s: supplier
-	k, next, continuation: stackframe
+	k, next: stackframe
 	exc: exception
 	id: identifier
 	num: number
@@ -116,11 +116,11 @@ export function Qua() {
 	// Environment
 	function Env(parent) { this.bindings = Object.create(!parent ? null : parent.bindings); this.parent = parent }
 	Env.prototype.toString = function() {
-		var n = (this != theEnvironment ? '' : 'The-') + 'Env'
-		if (this != theEnvironment || thenv) {	
-		 	var s=''; for (let n in this.bindings) if (Object.hasOwn(this.bindings, n)) s+= (!s ? "" : ", ") + n + "=" + this.bindings[n];
+		var isThenv = this == theEnvironment;
+		if (!isThenv || thenv) {	
+		 	var s=''; for (let n in this.bindings) if (Object.hasOwn(this.bindings, n)) s= n + "=" + this.bindings[n] + (!s ? "" : ", " + s);
 		}
-		return "["+ n + (!s ? "" : " " + s) + (!this.parent ? "" : " " + this.parent.toString()) + "]"
+		return "[" + (!isThenv ? "" : "The-") + "Env" + (!s ? "" : " " + s) + (!this.parent ? "" : " " + parent) + "]"
 	}
 	function env(parent) { return new Env(parent) }
 	function lookup(e, name) {
@@ -188,7 +188,7 @@ export function Qua() {
 		var msg = checkPt(pt, ep); if (msg) return error(msg + " of: " + cons(this, o))
 		return new Opv(pt, ep, elt(o, 2), e)
 	}
-	Vau.prototype.toString = function() { return "vm-vau" }
+	Vau.prototype.toString = function() { return "%vau" }
 	Def.prototype.combine = function(r, e, o) { // error handling
 		// o = (pt arg)
 		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
@@ -201,14 +201,14 @@ export function Qua() {
 		var val = r ? resumeFrame(r) : evaluate(null, e, arg)
 		return isSuspension(val) ? suspendFrame(val, r=> this.combine(r, e, o)) : bind(e, pt, val, cons(this, o))
 	}
-	Def.prototype.toString = function() { return "vm-def" }
+	Def.prototype.toString = function() { return "%def" }
 	Eval.prototype.combine = function(r, e, o) { // error handling
 		// o = (x eo)
 		var x = elt(o, 0)
 		var eo = elt(o, 1)
 		return evaluate(r, eo, x)
 	}
-	Eval.prototype.toString = function() { return "vm-eval" }
+	Eval.prototype.toString = function() { return "%eval" }
 	
 	
 	// First-order Control
@@ -221,14 +221,14 @@ export function Qua() {
 			return isSuspension(res) ? suspendFrame(res, r=> begin(r, e, xs)) : (kdr=> kdr === nil ? res : begin(null, e, kdr))(cdr(xs))
 		}
 	}
-	Begin.prototype.toString = function() { return "vm-begin" }
+	Begin.prototype.toString = function() { return "%begin" }
 	If.prototype.combine = function(r, e, o) {
 		// o = (test then else) 
 		if (len(o) > 3) return error("too many operands in: " + cons(this, o));
 		var test = r ? resumeFrame(r) : evaluate(null, e, elt(o, 0))
 		return isSuspension(test) ? suspendFrame(test, r=> this.combine(r, e, o)) : evaluate(null, e, test ? elt(o, 1) : elt(o, 2))
 	}
-	If.prototype.toString = function() { return "vm-if" }
+	If.prototype.toString = function() { return "%if" }
 	Loop.prototype.combine = function self(r, e, o) {
 		// o = (x)
 		var first = true // only resume once
@@ -238,7 +238,7 @@ export function Qua() {
 			if (isSuspension(res)) return suspendFrame(res, r=> self(r, e, o), elt(o, 0), e)
 		}
 	}
-	Loop.prototype.toString = function() { return "vm-loop" }
+	Loop.prototype.toString = function() { return "%loop" }
 	Catch.prototype.combine = function self(r, e, o) {
 		// o = (x handler)
 		var x = elt(o, 0)
@@ -253,7 +253,7 @@ export function Qua() {
 		if (isSuspension(res)) suspendFrame(res, r=> self(r, e, o), x, e)
 		return res
 	}
-	Catch.prototype.toString = function() { return "vm-catch" }
+	Catch.prototype.toString = function() { return "%catch" }
 	Finally.prototype.combine = function self(r, e, o) {
 		// o = (prot cleanup)
 		var prot = elt(o, 0)
@@ -271,7 +271,7 @@ export function Qua() {
 			return fres
 		}
 	}
-	Finally.prototype.toString = function() { return "vm-finally" }
+	Finally.prototype.toString = function() { return "%finally" }
 	
 	
 	// Delimited Control
@@ -286,7 +286,7 @@ export function Qua() {
 		if (res.prompt !== prompt) return suspendFrame(res, r=> self(r, e, o), x, e)
 		return combine(null, e, res.handler, cons(res.k, nil))
 	}
-	PushPrompt.prototype.toString = function() { return "vm-push-prompt" }
+	PushPrompt.prototype.toString = function() { return "%push-prompt" }
 	TakeSubcont.prototype.combine = function(r, e, o) {
 		// o = (prompt handler)
 		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
@@ -296,7 +296,7 @@ export function Qua() {
 		var cap = new Suspension(prompt, handler)
 		return suspendFrame(cap, r=> combine(null, e, r.s, nil), this, e)
 	}
-	TakeSubcont.prototype.toString = function() { return "vm-take-subcont" }
+	TakeSubcont.prototype.toString = function() { return "%take-subcont" }
 	PushSubcont.prototype.combine = function self(r, e, o) {
 		// o = (k apv0)
 		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
@@ -308,7 +308,7 @@ export function Qua() {
 		if (isSuspension(res)) suspendFrame(res, r=> self(r, e, o), apv0, e)
 		return res
 	}
-	PushSubcont.prototype.toString = function() { return "vm-push-subcont" }
+	PushSubcont.prototype.toString = function() { return "%push-subcont" }
 	PushPromptSubcont.prototype.combine = function self(r, e, o) {
 		// o = (prompt k apv0)
 		if (len(o) > 2) return error("too many operands in: " + cons(this, o));
@@ -320,19 +320,17 @@ export function Qua() {
 		var res = r ? resumeFrame(r) : resumeFrame(new Resumption(k, apv0))
 		if (!isSuspension(res)) return res
 		if (res.prompt !== prompt) return suspendFrame(res, r=> self(r, e, o), apv0, e)
-		var continuation = res.k
-		var handler = res.handler
-		return combine(null, e, handler, cons(continuation, nil))
+		return combine(null, e, res.handler, cons(res.k, nil))
 	}
-	PushPromptSubcont.prototype.toString = function() { return "vm-push-prompt-subcont" }
+	PushPromptSubcont.prototype.toString = function() { return "%push-prompt-subcont" }
 	
 	
 	// Dynamic Variables
 	function DV(val) { this.val = val }; function DNew() { }; function DRef() { }; function DLet() { }
 	DNew.prototype.combine = function(r, e, o) { return new DV(elt(o, 0)) }
-	DNew.prototype.toString = function() { return "vm-dnew" }
+	DNew.prototype.toString = function() { return "%dnew" }
 	DRef.prototype.combine = function(r, e, o) { return elt(o, 0).val }
-	DRef.prototype.toString = function() { return "vm-dref" }
+	DRef.prototype.toString = function() { return "%dref" }
 	DLet.prototype.combine = function self(r, e, o) {
 		var dv = elt(o, 0)
 		var val = elt(o, 1)
@@ -348,7 +346,7 @@ export function Qua() {
 			dv.val = oldVal
 		}
 	}
-	DLet.prototype.toString = function() { return "vm-dlet" }
+	DLet.prototype.toString = function() { return "%dlet" }
 	
 	
 	// Error handling
@@ -555,70 +553,71 @@ export function Qua() {
 	
 	// Bootstrap
 	var theEnvironment = env()
-	bind(theEnvironment, sym("vm-def"), new Def())
-	bind(theEnvironment, sym("vm-begin"), new Begin())
+	bind(theEnvironment, sym("%def"), new Def())
+	bind(theEnvironment, sym("%begin"), new Begin())
 	evaluate(null, theEnvironment,
 		parseBytecode(
-			["vm-begin",
+			["%begin",
 				// Basics
-				["vm-def", "vm-vau", new Vau()],
-				["vm-def", "vm-eval", wrap(new Eval())],
-				["vm-def", "vm-make-environment", jsWrap(parent=> env(parent))],
-				["vm-def", "vm-wrap", jsWrap(wrap)],
-				["vm-def", "vm-unwrap", jsWrap(unwrap)],
+				["%def", "%vau", new Vau()],
+				["%def", "%eval", wrap(new Eval())],
+				["%def", "%make-environment", jsWrap(parent=> env(parent))],
+				["%def", "%wrap", jsWrap(wrap)],
+				["%def", "%unwrap", jsWrap(unwrap)],
 				// Values
-				["vm-def", "vm-cons", jsWrap(cons)],
-				["vm-def", "vm-cons?", jsWrap(obj=> obj instanceof Cons)],
-				["vm-def", "vm-nil?", jsWrap(obj=> obj === nil)],
-				["vm-def", "vm-string-to-symbol", jsWrap(sym)],
-				["vm-def", "vm-symbol?", jsWrap(obj=> obj instanceof Sym)],
-				["vm-def", "vm-symbol-name", jsWrap(sym=> sym.name)],
+				["%def", "%cons", jsWrap(cons)],
+				["%def", "%cons?", jsWrap(obj=> obj instanceof Cons)],
+				["%def", "%nil?", jsWrap(obj=> obj === nil)],
+				["%def", "%string-to-symbol", jsWrap(sym)],
+				["%def", "%symbol?", jsWrap(obj=> obj instanceof Sym)],
+				["%def", "%symbol-name", jsWrap(sym=> sym.name)],
 				// First-order Control
-				["vm-def", "vm-if", new If()],
-				["vm-def", "vm-loop", new Loop()],
-				["vm-def", "vm-throw", jsWrap(err=> { throw err })],
-				["vm-def", "vm-catch", new Catch()],
-				["vm-def", "vm-finally", new Finally()],
+				["%def", "%if", new If()],
+				["%def", "%loop", new Loop()],
+				["%def", "%throw", jsWrap(err=> { throw err })],
+				["%def", "%catch", new Catch()],
+				["%def", "%finally", new Finally()],
 				// Delimited Control
-				["vm-def", "vm-push-prompt", new PushPrompt()],
-				["vm-def", "vm-take-subcont", wrap(new TakeSubcont())],
-				["vm-def", "vm-push-subcont", wrap(new PushSubcont())],
-				["vm-def", "vm-push-prompt-subcont", wrap(new PushPromptSubcont())],
+				["%def", "%push-prompt", new PushPrompt()],
+				["%def", "%take-subcont", wrap(new TakeSubcont())],
+				["%def", "%push-subcont", wrap(new PushSubcont())],
+				["%def", "%push-prompt-subcont", wrap(new PushPromptSubcont())],
 				// Dynamically-scoped Variables
-				["vm-def", "vm-dnew", wrap(new DNew())],
-				["vm-def", "vm-dlet", new DLet()],
-				["vm-def", "vm-dref", wrap(new DRef())],
+				["%def", "%dnew", wrap(new DNew())],
+				["%def", "%dlet", new DLet()],
+				["%def", "%dref", wrap(new DRef())],
 				// Errors
-				["vm-def", "vm-root-prompt", rootPrompt],
-				["vm-def", "vm-error", jsWrap(error)],
+				["%def", "%root-prompt", rootPrompt],
+				["%def", "%error", jsWrap(error)],
 				// JS Interface
-				["vm-def", "vm-js-wrap", jsWrap(jsWrap)],
-				["vm-def", "vm-js-unop", jsWrap(jsUnop)],
-				["vm-def", "vm-js-binop", jsWrap(jsBinop)],
-				["vm-def", "vm-js-getter", jsWrap(jsGetter)],
-				["vm-def", "vm-js-setter", jsWrap(jsSetter)],
-				["vm-def", "vm-js-invoker", jsWrap(jsInvoker)],
-				["vm-def", "vm-js-function", jsWrap(jsFunction)],
-				["vm-def", "vm-js-global", jsGlobal],
-				["vm-def", "vm-js-make-object", jsWrap(function() { return {} })],
-				["vm-def", "vm-js-make-prototype", jsWrap(makePrototype)],
-				["vm-def", "vm-js-new", jsWrap(jsNew)],
-				["vm-def", "vm-type?", jsWrap(isType)],
+				["%def", "%js-wrap", jsWrap(jsWrap)],
+				["%def", "%js-unop", jsWrap(jsUnop)],
+				["%def", "%js-binop", jsWrap(jsBinop)],
+				["%def", "%js-getter", jsWrap(jsGetter)],
+				["%def", "%js-setter", jsWrap(jsSetter)],
+				["%def", "%js-invoker", jsWrap(jsInvoker)],
+				["%def", "%js-function", jsWrap(jsFunction)],
+				["%def", "%js-global", jsGlobal],
+				["%def", "%js-make-object", jsWrap(function() { return {} })],
+				["%def", "%js-make-prototype", jsWrap(makePrototype)],
+				["%def", "%js-new", jsWrap(jsNew)],
+				["%def", "%type?", jsWrap(isType)],
 				// Setters
-				["vm-def", "vm-setter", SETTER],
+				["%def", "%setter", SETTER],
 				// Utilities
-				["vm-def", "vm-list", jsWrap(list)],
-				["vm-def", "vm-list*", jsWrap(listStar)],
-				["vm-def", "vm-list-to-array", jsWrap(listToArray)],
-				["vm-def", "vm-array-to-list", jsWrap(arrayToList)],
-				["vm-def", "vm-reverse-list", jsWrap(reverseList)],
-				["vm-def", "==", jsWrap((a,b)=> a == b)],
-				["vm-def", "eq", jsWrap((a,b)=> eq(a,b))],
-				["vm-def", "to-string", jsWrap(toString)],
-				["vm-def", "assert", jsFun(assert)],
-				["vm-def", "trace", jsFun(b=> b === undefined ? trace : trace=b)],
-				["vm-def", "stack", jsFun(b=> b === undefined ? stack : stack=b)],
-				["vm-def", "thenv", jsFun(b=> b === undefined ? thenv : thenv=b)],
+				["%def", "%list", jsWrap(list)],
+				["%def", "%list*", jsWrap(listStar)],
+				["%def", "%list-to-array", jsWrap(listToArray)],
+				["%def", "%array-to-list", jsWrap(arrayToList)],
+				["%def", "%reverse-list", jsWrap(reverseList)],
+				["%def", "!", jsWrap(a=> !a)],
+				["%def", "==", jsWrap((a,b)=> a == b)],
+				["%def", "eq", jsWrap((a,b)=> eq(a,b))],
+				["%def", "to-string", jsWrap(toString)],
+				["%def", "assert", jsFun(assert)],
+				["%def", "trace", jsFun(b=> b === undefined ? trace : trace=b)],
+				["%def", "stack", jsFun(b=> b === undefined ? stack : stack=b)],
+				["%def", "thenv", jsFun(b=> b === undefined ? thenv : thenv=b)],
 			]
 		)
 	)

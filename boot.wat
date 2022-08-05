@@ -3,37 +3,38 @@
 ;; ``72. An adequate bootstrap is a contradiction in terms.''
 
 ;; Rename ur-def
-(vm-def $define! vm-def)
+(%def $define! %def)
 
 ;; Rename bindings that will be used as provided by VM
-($define! array->list vm-array-to-list)
-($define! begin vm-begin)
-($define! cons vm-cons)
-($define! cons? vm-cons?)
-($define! dnew vm-dnew)
-($define! dref vm-dref)
-($define! error vm-error)
-($define! eval vm-eval)
-($define! if vm-if)
-($define! js-getter vm-js-getter)
-($define! js-global vm-js-global)
-($define! js-invoker vm-js-invoker)
-($define! list* vm-list*)
-($define! list->array vm-list-to-array)
-($define! make-environment vm-make-environment)
-($define! new vm-js-new)
-($define! nil? vm-nil?)
-($define! reverse-list vm-reverse-list)
-($define! setter vm-setter)
-($define! string->symbol vm-string-to-symbol)
-($define! symbol-name vm-symbol-name)
-($define! symbol? vm-symbol?)
-($define! throw vm-throw)
-($define! unwrap vm-unwrap)
-($define! wrap vm-wrap)
+($define! array->list %array-to-list)
+($define! begin %begin)
+($define! cons %cons)
+($define! cons? %cons?)
+($define! dnew %dnew)
+($define! dref %dref)
+($define! error %error)
+($define! eval %eval)
+($define! if %if)
+($define! js-getter %js-getter)
+($define! js-global %js-global)
+($define! js-invoker %js-invoker)
+($define! list* %list*)
+($define! list->array %list-to-array)
+($define! make-environment %make-environment)
+($define! new %js-new)
+($define! nil? %nil?)
+($define! not !)
+($define! reverse-list %reverse-list)
+($define! setter %setter)
+($define! string->symbol %string-to-symbol)
+($define! symbol-name %symbol-name)
+($define! symbol? %symbol?)
+($define! throw %throw)
+($define! unwrap %unwrap)
+($define! wrap %wrap)
 
 ;; Important utilities
-($define! $vau vm-vau)
+($define! $vau %vau)
 ($define! quote ($vau (x) #ignore x))
 ($define! list (wrap ($vau elts #ignore elts)))
 ($define! the-environment ($vau () e e))
@@ -59,7 +60,7 @@
 ($define! $vau
   (make-macro-expander
     ($vau (params env-param . body) #ignore
-      (list vm-vau params env-param (list* begin body)) )))
+      (list %vau params env-param (list* begin body)) )))
 
 ($define! macro
   (make-macro-expander
@@ -79,22 +80,22 @@
 ;;;; Wrap incomplete VM forms
 
 (define-macro (loop . body)
-  (list vm-loop (list* begin body)))
+  (list %loop (list* begin body)))
 
 (define-operative (catch protected handler) env
-  (eval (list vm-catch protected (eval handler env)) env) )
+  (eval (list %catch protected (eval handler env)) env) )
 
 (define-operative (push-prompt prompt . body) env
-  (eval (list vm-push-prompt (eval prompt env) (list* begin body)) env) )
+  (eval (list %push-prompt (eval prompt env) (list* begin body)) env) )
 
 (define-macro (take-subcont prompt k . body)
-  (list vm-take-subcont prompt (list* $lambda (list k) body)) )
+  (list %take-subcont prompt (list* $lambda (list k) body)) )
 
 (define-macro (push-subcont k . body)
-  (list vm-push-subcont k (list* $lambda () body)) )
+  (list %push-subcont k (list* $lambda () body)) )
 
 (define-macro (push-prompt-subcont p k . body)
-  (list vm-push-prompt-subcont p k (list* $lambda () body)) )
+  (list %push-prompt-subcont p k (list* $lambda () body)) )
 
 ;;;; List utilities
 
@@ -247,7 +248,7 @@
            (list* begin body)
            (let* ( (((name expr) . rest-bs) bs)
                    (value (eval expr env)) )
-             (list vm-dlet name value (process-bindings rest-bs)) )))
+             (list %dlet name value (process-bindings rest-bs)) )))
     env ))
 
 ;;;; Prototypes
@@ -256,7 +257,7 @@
   (eval (list $define! name (make-prototype name super-name prop-names env)) env))
 
 (define (make-prototype name super-name prop-names env)
-  (let ((p (apply vm-js-make-prototype (list* (symbol-name name) (map-list symbol-name prop-names))))
+  (let ((p (apply %js-make-prototype (list* (symbol-name name) (map-list symbol-name prop-names))))
         (super (eval super-name env)))
     (set (.prototype p) (@create &Object (.prototype super)))
     (set (.constructor (.prototype p)) super)
@@ -297,7 +298,7 @@
 ;;;; JavaScript
 
 (define (relational-op name)
-  (let ((binop (vm-js-binop name)))
+  (let ((binop (%js-binop name)))
     (letrec ((op (lambda (arg1 arg2 . rest)
                    (if (binop arg1 arg2)
                        (if (nil? rest) #t
@@ -316,13 +317,13 @@
 (define (!== . args) (not (apply === args)))
 
 (define *
-  (let ((vm* (vm-js-binop "*")))
+  (let ((vm* (%js-binop "*")))
     (lambda args
       (fold-list vm* 1 args) )))
 
 ;; Can't simply use 0 as unit or it won't work with strings
 (define +
-  (let ((vm+ (vm-js-binop "+")))
+  (let ((vm+ (%js-binop "+")))
 	(lambda args
 	  (if (nil? args) 0
 	      (fold-list vm+ (car args) (cdr args)) ))))
@@ -333,25 +334,25 @@
         (binop unit arg1)
         (fold-list binop arg1 rest) )))
 
-(define - (negative-op (vm-js-binop "-") 0))
-(define / (negative-op (vm-js-binop "/") 1))
+(define - (negative-op (%js-binop "-") 0))
+(define / (negative-op (%js-binop "/") 1))
 
-(define % (vm-js-binop "%"))
-(define not (vm-js-unop "!"))
-(define typeof (vm-js-unop "typeof"))
-(define in (vm-js-binop "in"))
-(define instanceof (vm-js-binop "instanceof"))
+(define % (%js-binop "%"))
+(define not (%js-unop "!"))
+(define typeof (%js-unop "typeof"))
+(define in (%js-binop "in"))
+(define instanceof (%js-binop "instanceof"))
 
-(define bitand (vm-js-binop "&"))
-(define bitor (vm-js-binop "|"))
-(define bitxor (vm-js-binop "^"))
-(define bitnot (vm-js-unop "~"))
-(define bitshiftl (vm-js-binop "<<"))
-(define bitshiftr (vm-js-binop ">>"))
-(define bitshiftr0 (vm-js-binop ">>>"))
+(define bitand (%js-binop "&"))
+(define bitor (%js-binop "|"))
+(define bitxor (%js-binop "^"))
+(define bitnot (%js-unop "~"))
+(define bitshiftl (%js-binop "<<"))
+(define bitshiftr (%js-binop ">>"))
+(define bitshiftr0 (%js-binop ">>>"))
 
 (define-operative (object . pairs) env
-  (let ((obj (vm-js-make-object)))
+  (let ((obj (%js-make-object)))
     (map-list ($lambda ((name value))
                 (set ((js-getter (eval name env)) obj) (eval value env)))
               pairs)
@@ -367,13 +368,13 @@
 (define (array . args) (list->array args))
 
 (define (js-callback fun)
-  (vm-js-function ($lambda args (push-prompt vm-root-prompt (apply fun args)))) )
+  (%js-function ($lambda args (push-prompt %root-prompt (apply fun args)))) )
 
 (define-macro (js-lambda params . body)
   (list js-callback (list* lambda params body)))
 
 (define-macro (type? obj type)
-  (list vm-type? obj type (symbol-name type)))
+  (list %type? obj type (symbol-name type)))
 
 (define-macro (the type obj)
   (list if (list type? obj type) obj (list error (list + obj " is not a: " type))) )
@@ -466,10 +467,10 @@
     (when (type? (.next k) &StackFrame) ;; .next di !StackFrame no buono!
     	(print-frame (.next k)) ))
   (log "prima")
-  (take-subcont vm-root-prompt k
+  (take-subcont %root-prompt k
   	(log "dentro")
     (print-frame k)
-    (push-prompt vm-root-prompt
+    (push-prompt %root-prompt
       (push-subcont k) )))
 
 (define (user-break err)
